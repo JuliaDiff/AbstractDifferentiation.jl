@@ -96,7 +96,7 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, xs...)
         v, g = value_and_gradient(lowest(ab), f, _xs...)
         if !primalcalled
             value = primalvalue(secondlowest(ab), v, f, xs)
-            primalcalled = false
+            primalcalled = true
         end
         return g
     end, xs...)
