@@ -4,14 +4,15 @@ authors = ["Mohamed Tarek <mohamed82008@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
+ExprTools = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 julia = "1"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "FiniteDifferences"]

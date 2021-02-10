@@ -1,6 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra
+using LinearAlgebra, ExprTools
 
 export AD
 
@@ -20,6 +20,7 @@ function reduceorder(b::HigherOrderBackend)
 end
 lowest(b::AbstractBackend) = b
 lowest(b::HigherOrderBackend) = b.backends[end]
+secondlowest(b::AbstractBackend) = b
 secondlowest(b::HigherOrderBackend) = lowest(reduceorder(b))
 
 # If the primal value is in y, extract it.
@@ -119,7 +120,7 @@ end
 function pushforward_function(
     ab::AbstractBackend,
     f,
-    xs::Union{Number, AbstractArray{<:Number}}...,
+    xs...,
 )
     return (ds) -> begin
         return jacobian(lowest(ab), (xds...,) -> begin
@@ -138,21 +139,21 @@ end
 function value_and_pushforward_function(
     ab::AbstractBackend,
     f,
-    xs::Union{Number, AbstractArray{<:Number}}...,
+    xs...,
 )
     return (ds) -> begin
         @assert ds isa Tuple && length(ds) == length(xs)
-        return value_and_jacobian(lowest(ab), (xds...,) -> begin
-            if ds isa Tuple
-                @assert length(xs) == length(ds)
-                newxs = xs .+ ds .* xds
-                return f(newxs...)
-            else
-                @assert length(xs) == length(xds) == 1
-                newx = xs[1] + ds * xds[1]
-                return f(newx)
+        local value
+        primalcalled = false
+        pf = pushforward_function(lowest(ab), (_xs...,) -> begin
+            vs = f(_xs...)
+            if !primalcalled
+                value = primalvalue(lowest(ab), vs, f, xs)
+                primalcalled = true
             end
-        end, _zero.(xs, ds)...)
+            return vs
+        end, xs...)(ds)
+        return value, pf
     end
 end
 
@@ -198,33 +199,23 @@ function value_and_pullback_function(
     return (ws) -> begin
         local value
         primalcalled = false
-        jacs = jacobian(lowest(ab), (_xs...,) -> begin
+        if ws === nothing
+            vs = f(xs...)
+            if !primalcalled
+                value = primalvalue(lowest(ab), vs, f, xs)
+                primalcalled = true
+            end
+            return value, nothing
+        end
+        pb = pullback_function(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
                 value = primalvalue(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
-            if ws isa Tuple
-                @assert length(vs) == length(ws)
-                return sum(zip(vs, ws)) do v, w
-                    if w isa Union{AbstractMatrix, UniformScaling} && v isa AbstractVector
-                        return w' * v
-                    else
-                        # for arbitrary arrays
-                        return dot(w, v)
-                    end
-                end
-            else
-                w, v = ws, vs
-                if w isa Union{AbstractMatrix, UniformScaling} && v isa AbstractVector
-                    return w' * v
-                else
-                    # for arbitrary arrays
-                    return dot(w, v)
-                end
-            end
-        end, xs...)
-        return value, adjoint.(jacs)
+            return vs
+        end, xs...)(ws)
+        return value, pb
     end
 end
 
@@ -327,6 +318,113 @@ function (h::H)(xs...; lazy = true)
     else
         return hessian(h.ab, h.f, xs...)
     end
+end
+
+macro primitive(expr)
+    fdef = ExprTools.splitdef(expr)
+    name = fdef[:name]
+    if name == :pushforward_function
+        return define_pushforward_function_and_friends(fdef) |> esc
+    elseif name == :pullback_function
+        return define_pullback_function_and_friends(fdef) |> esc
+    elseif name == :jacobian
+        return define_jacobian_and_friends(fdef) |> esc
+    elseif name == :primalvalue
+        return define_primalvalue(fdef) |> esc
+    else
+        throw("Unsupported AD primitive.")
+    end
+end
+
+function define_pushforward_function_and_friends(fdef)
+    fdef[:name] = :(AbstractDifferentiation.pushforward_function)
+    args = fdef[:args]
+    funcs = quote
+        $(ExprTools.combinedef(fdef))
+        function AbstractDifferentiation.jacobian($(args...),)
+            identity_like = AbstractDifferentiation.identity_matrix_like($(args[3:end]...),)
+            pff = AbstractDifferentiation.pushforward_function($(args...),)
+            if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix, Number}}}
+                return map(identity_like) do identity_like_i
+                    return mapreduce(hcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                        pff(cols)
+                    end
+                end
+            else
+                return pff(identity_like)
+            end
+        end
+    end
+    return funcs
+end
+
+function define_pullback_function_and_friends(fdef)
+    fdef[:name] = :(AbstractDifferentiation.pullback_function)
+    args = fdef[:args]
+    funcs = quote
+        $(ExprTools.combinedef(fdef))
+        function AbstractDifferentiation.jacobian($(args...),)
+            value_and_pbf = AbstractDifferentiation.value_and_pullback_function($(args...),)
+            value, _ = value_and_pbf(nothing)
+            identity_like = AbstractDifferentiation.identity_matrix_like(value)
+            if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
+                return map(identity_like) do identity_like_i
+                    return mapreduce(vcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                        value_and_pbf(cols)[2]'
+                    end
+                end
+            else
+                return adjoint.(value_and_pbf(identity_like)[2])
+            end
+        end
+    end
+    return funcs
+end
+
+_eachcol(a::Number) = (a,)
+_eachcol(a) = eachcol(a)
+
+function define_jacobian_and_friends(fdef)
+    fdef[:name] = :(AbstractDifferentiation.jacobian)
+    return ExprTools.combinedef(fdef)
+end
+
+function define_primalvalue(fdef)
+    fdef[:name] = :(AbstractDifferentiation.primalvalue)
+    return ExprTools.combinedef(fdef)
+end
+
+function identity_matrix_like(x)
+    throw("The function `identity_matrix_like` is not defined for the type $(typeof(x)).")
+end
+function identity_matrix_like(x::AbstractVector)
+    return (Matrix{eltype(x)}(I, length(x), length(x)),)
+end
+function identity_matrix_like(x::Number)
+    return (one(x),)
+end
+identity_matrix_like(x::Tuple) = identity_matrix_like(x...)
+@generated function identity_matrix_like(x...)
+    expr = :(())
+    for i in 1:length(x)
+        push!(expr.args, :(()))
+        for j in 1:i-1
+            push!(expr.args[i].args, :((zero_matrix_like(x[$j])[1])))
+        end
+        push!(expr.args[i].args, :((identity_matrix_like(x[$i]))[1]))
+        for j in i+1:length(x)
+            push!(expr.args[i].args, :(zero_matrix_like(x[$j])[1]))
+        end
+    end
+    return expr
+end
+
+zero_matrix_like(x::Tuple) = zero_matrix_like(x...)
+zero_matrix_like(x...) = map(zero_matrix_like, x)
+zero_matrix_like(x::AbstractVector) = (zero(similar(x, length(x), length(x))),)
+zero_matrix_like(x::Number) = (zero(x),)
+function zero_matrix_like(x)
+    throw("The function `zero_matrix_like` is not defined for the type $(typeof(x)).")
 end
 
 end
