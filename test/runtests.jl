@@ -36,16 +36,28 @@ AD.@primitive function pullback_function(ab::FDMBackend3, f, xs...)
 end
 
 fder(x, y) = exp(y) * x + y * log(x)
+dfderdx(x, y) = exp(y) + y * 1/x
+dfderdy(x, y) = exp(y) * x + log(x)
+
 fgrad(x, y) = prod(x) + sum(y ./ (1:length(y)))
+dfgraddx(x, y) = prod(x)./x
+dfgraddy(x, y) = one(eltype(y)) ./ (1:length(y))
+
 function fjac(x, y)
     x + Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U) * y
 end
+dfjacdx(x, y) = I(length(x))
+dfjacdy(x, y) = Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U)
 
 const xscalar = rand()
 const yscalar = rand()
 
 const xvec = rand(5)
 const yvec = rand(5)
+
+# to check if vectors get mutated
+xvec2 = deepcopy(xvec)
+yvec2 = deepcopy(yvec)
 
 function test_fdm_derivatives(fdm_backend)
     der1 = AD.derivative(fdm_backend, fder, xscalar, yscalar)
@@ -57,6 +69,8 @@ function test_fdm_derivatives(fdm_backend)
     valscalar, der3 = AD.value_and_derivative(fdm_backend, fder, xscalar, yscalar)
     @test valscalar == fder(xscalar, yscalar)
     @test der3 .- der1 == (0, 0)
+    der_exact = (dfderdx(xscalar,yscalar), dfderdy(xscalar,yscalar))
+    @test minimum(isapprox.(der_exact, der1, rtol=1e-10))
 end
 
 function test_fdm_gradients(fdm_backend)
@@ -66,6 +80,10 @@ function test_fdm_gradients(fdm_backend)
     valscalar, grad3 = AD.value_and_gradient(fdm_backend, fgrad, xvec, yvec)
     @test valscalar == fgrad(xvec, yvec)
     @test norm.(grad3 .- grad1) == (0, 0)
+    grad_exact = (dfgraddx(xvec,yvec), dfgraddy(xvec,yvec))
+    @test minimum(isapprox.(grad_exact, grad1, rtol=1e-10))
+    @test xvec == xvec2
+    @test yvec == yvec2
 end
 
 function test_fdm_jacobians(fdm_backend)
@@ -75,6 +93,10 @@ function test_fdm_jacobians(fdm_backend)
     valvec, jac3 = AD.value_and_jacobian(fdm_backend, fjac, xvec, yvec)
     @test valvec == fjac(xvec, yvec)
     @test norm.(jac3 .- jac1) == (0, 0)
+    grad_exact = (dfjacdx(xvec, yvec), dfjacdy(xvec, yvec))
+    @test minimum(isapprox.(grad_exact, jac1, rtol=1e-10))
+    @test xvec == xvec2
+    @test yvec == yvec2
 end
 
 function test_fdm_hessians(fdm_backend)

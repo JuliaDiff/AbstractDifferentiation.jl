@@ -54,6 +54,10 @@ end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
     primalcalled = false
+    if ab isa AbstractFiniteDifference
+        value = primalvalue(ab, nothing, f, xs)
+        primalcalled = true
+    end
     jacs = jacobian(lowest(ab), (_xs...,) -> begin
         v = f(_xs...)
         if !primalcalled
@@ -62,11 +66,16 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
         end
         return v
     end, xs...)
+
     return value, jacs
 end
 function value_and_hessian(ab::AbstractBackend, f, xs...)
     local value
     primalcalled = false
+    if ab isa AbstractFiniteDifference
+        value = primalvalue(ab, nothing, f, xs)
+        primalcalled = true
+    end
     hess = jacobian(secondlowest(ab), (_xs...,) -> begin
         v, g = value_and_gradient(lowest(ab), f, _xs...)
         if !primalcalled
