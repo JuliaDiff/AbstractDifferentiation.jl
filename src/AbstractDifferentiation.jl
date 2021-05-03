@@ -382,6 +382,10 @@ function define_pullback_function_and_friends(fdef)
                         value_and_pbf(cols)[2]'
                     end
                 end
+            elseif eltype(identity_like) <: AbstractMatrix
+                return vcat.(mapslices(identity_like[1], dims=1) do cols
+                    adjoint.(value_and_pbf((cols,))[2])
+                end ...)
             else
                 return adjoint.(value_and_pbf(identity_like)[2])
             end

@@ -161,7 +161,6 @@ end
         @testset "Jacobian" begin
             test_fdm_jacobians(fdm_backend1)
             test_fdm_jacobians(fdm_backend2)
-            # Errors
             test_fdm_jacobians(fdm_backend3)
         end
         @testset "Hessian" begin
