@@ -359,6 +359,19 @@ function define_pushforward_function_and_friends(fdef)
                         pff(cols)
                     end
                 end
+            elseif eltype(identity_like) <: AbstractMatrix
+                ret = hcat.(mapslices(identity_like[1], dims=1) do cols
+                    pf = pff((cols,))
+                    if typeof(pf) <: AbstractVector
+                        return (pf, )
+                    elseif typeof(pf) <: AbstractMatrix
+                        return (transpose(pf), )
+                    else
+                        return pf
+                    end
+                end ...)
+                return ret isa Tuple ? ret : (ret,)
+
             else
                 return pff(identity_like)
             end

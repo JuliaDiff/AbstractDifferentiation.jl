@@ -42,6 +42,7 @@ dfderdy(x, y) = exp(y) * x + log(x)
 fgrad(x, y) = prod(x) + sum(y ./ (1:length(y)))
 dfgraddx(x, y) = prod(x)./x
 dfgraddy(x, y) = one(eltype(y)) ./ (1:length(y))
+dfgraddxdx(x, y) = prod(x)./(x*x') - Diagonal(diag(prod(x)./(x*x')))
 
 function fjac(x, y)
     x + Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U) * y
@@ -121,6 +122,12 @@ function test_fdm_hessians(fdm_backend)
     @test valscalar == fgrad(xvec, yvec)
     @test norm.(grad .- AD.gradient(fdm_backend, fhess, xvec)) == (0,)
     @test norm.(hess4 .- hess1) == (0,)
+    @test dfgraddxdx(xvec,yvec) ≈ hess1[1] atol=1e-10
+    @test xvec == xvec2
+    @test yvec == yvec2
+    fhess2 = x-> dfgraddx(x, yvec)
+    hess5 = AD.jacobian(fdm_backend, fhess2, xvec)
+    @test minimum(isapprox.(hess5, hess1, atol=1e-10))
 end
 
 function test_fdm_jvp(fdm_backend)
@@ -166,16 +173,13 @@ end
         @testset "Hessian" begin
             # Works but super slow
             test_fdm_hessians(fdm_backend1)
-            # Errors
             test_fdm_hessians(fdm_backend2)
-            # Errors
             test_fdm_hessians(fdm_backend3)
         end
         @testset "jvp" begin
             test_fdm_jvp(fdm_backend1)
             # Errors
             test_fdm_jvp(fdm_backend2)
-            # Errors
             test_fdm_jvp(fdm_backend3)
         end
         @testset "j′vp" begin
