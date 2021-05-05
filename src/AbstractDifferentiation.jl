@@ -154,6 +154,10 @@ function value_and_pushforward_function(
         @assert ds isa Tuple && length(ds) == length(xs)
         local value
         primalcalled = false
+        if ab isa AbstractFiniteDifference
+            value = primalvalue(ab, nothing, f, xs)
+            primalcalled = true
+        end
         pf = pushforward_function(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
@@ -208,6 +212,10 @@ function value_and_pullback_function(
     return (ws) -> begin
         local value
         primalcalled = false
+        if ab isa AbstractFiniteDifference
+            value = primalvalue(ab, nothing, f, xs)
+            primalcalled = true
+        end
         if ws === nothing
             vs = f(xs...)
             if !primalcalled

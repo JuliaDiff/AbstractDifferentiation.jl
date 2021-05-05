@@ -1,5 +1,7 @@
 using AbstractDifferentiation
 using Test, FiniteDifferences, LinearAlgebra
+using Random
+Random.seed!(1234)
 
 const FDM = FiniteDifferences
 
@@ -30,8 +32,13 @@ const fdm_backend3 = FDMBackend3()
 AD.@primitive function pullback_function(ab::FDMBackend3, f, xs...)
     return function (vs)
         # Supports only single output
-        @assert length(vs) == 1
-        return j′vp(ab.alg, f, vs[1], xs...)
+        if vs isa AbstractVector
+            return j′vp(ab.alg, f, vs, xs...)
+        else
+            @assert length(vs) == 1
+            return j′vp(ab.alg, f, vs[1], xs...)
+
+        end
     end
 end
 
@@ -49,6 +56,14 @@ function fjac(x, y)
 end
 dfjacdx(x, y) = I(length(x))
 dfjacdy(x, y) = Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U)
+
+# Jvp
+jxvp(x,y,v) = dfjacdx(x,y)*v
+jyvp(x,y,v) = dfjacdy(x,y)*v
+
+# vJp
+vJxp(x,y,v) = dfjacdx(x,y)'*v
+vJyp(x,y,v) = dfjacdy(x,y)'*v
 
 const xscalar = rand()
 const yscalar = rand()
@@ -151,6 +166,9 @@ function test_fdm_j′vp(fdm_backend)
     valvec, pb3 = AD.value_and_pullback_function(fdm_backend, fjac, xvec, yvec)(w)
     @test valvec == fjac(xvec, yvec)
     @test norm.(pb3 .- pb1) == (0, 0)
+    @test minimum(isapprox.(pb1, (vJxp(xvec,yvec,w), vJyp(xvec,yvec,w)), atol=1e-10))
+    @test xvec == xvec2
+    @test yvec == yvec2
 end
 
 @testset "AbstractDifferentiation.jl" begin
@@ -185,7 +203,6 @@ end
         @testset "j′vp" begin
             test_fdm_j′vp(fdm_backend1)
             test_fdm_j′vp(fdm_backend2)
-            # Errors
             test_fdm_j′vp(fdm_backend3)
         end
     end
