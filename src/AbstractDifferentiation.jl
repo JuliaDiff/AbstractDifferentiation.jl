@@ -54,7 +54,7 @@ end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
     primalcalled = false
-    if ab isa AbstractFiniteDifference
+    if lowest(ab) isa AbstractFiniteDifference
         value = primalvalue(ab, nothing, f, xs)
         primalcalled = true
     end
