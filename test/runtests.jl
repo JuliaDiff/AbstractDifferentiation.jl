@@ -147,15 +147,26 @@ end
 
 function test_fdm_jvp(fdm_backend)
     v = (rand(length(xvec)), rand(length(yvec)))
-    pf1 = AD.pushforward_function(fdm_backend, fjac, xvec, yvec)(v)
+
+    # augmented version of v
+    identity_like = AD.identity_matrix_like(v)
+    vaug = map(identity_like) do identity_like_i
+        identity_like_i .* v
+    end
+
+    pf1 = map(v->AD.pushforward_function(fdm_backend2, fjac, xvec, yvec)(v), vaug)
     pf2 = (
         FDM.jvp(fdm_backend.alg, x -> fjac(x, yvec), (xvec, v[1])),
         FDM.jvp(fdm_backend.alg, y -> fjac(xvec, y), (yvec, v[2])),
     )
     @test norm.(pf1 .- pf2) == (0, 0)
-    valvec, pf3 = AD.value_and_pushforward_function(fdm_backend, fjac, xvec, yvec)(v)
-    @test valvec == fjac(xvec, yvec)
-    @test norm.(pf3 .- pf1) == (0, 0)
+    ((valvec1, pf3x), (valvec2, pf3y)) = map(v->AD.value_and_pushforward_function(fdm_backend2, fjac, xvec, yvec)(v), vaug)
+    @test valvec1 == fjac(xvec, yvec)
+    @test valvec2 == fjac(xvec, yvec)
+    @test norm.((pf3x,pf3y) .- pf1) == (0, 0)
+    @test minimum(isapprox.(pf1, (jxvp(xvec,yvec,v[1]), jyvp(xvec,yvec,v[2])), atol=1e-10))
+    @test xvec == xvec2
+    @test yvec == yvec2
 end
 
 function test_fdm_j′vp(fdm_backend)
@@ -196,7 +207,6 @@ end
         end
         @testset "jvp" begin
             test_fdm_jvp(fdm_backend1)
-            # Errors
             test_fdm_jvp(fdm_backend2)
             test_fdm_jvp(fdm_backend3)
         end
