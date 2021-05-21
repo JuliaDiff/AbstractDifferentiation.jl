@@ -182,6 +182,76 @@ function test_fdm_j′vp(fdm_backend)
     @test yvec == yvec2
 end
 
+function test_fdm_lazy_derivatives(fdm_backend)
+    # single input function
+    der1 = AD.derivative(fdm_backend, x->fder(x, yscalar), xscalar)
+    der2 = (
+        fdm_backend.alg(x -> fder(x, yscalar), xscalar),
+        fdm_backend.alg(y -> fder(xscalar, y), yscalar),
+    )
+
+    lazyder = AD.LazyDerivative(fdm_backend, x->fder(x, yscalar), xscalar)
+
+    # multiplication with scalar
+    @test der1[1]*yscalar == der2[1]*yscalar
+    @test lazyder*yscalar == der1.*yscalar
+    @test lazyder*yscalar isa Tuple
+
+    @test yscalar*der1[1] == yscalar*der2[1]
+    @test yscalar*lazyder == yscalar.*der1
+    @test yscalar*lazyder isa Tuple
+
+    # multiplication with array
+    @test der1[1]*yvec == der2[1]*yvec
+    @test lazyder*yvec == (der1.*yvec,)
+    @test lazyder*yvec isa Tuple
+
+    @test yvec*der1[1] == yvec*der2[1]
+    @test yvec*lazyder == (yvec.*der1,)
+    @test yvec*lazyder isa Tuple
+
+    # multiplication with tuple
+    @test lazyder*(yscalar,) == lazyder*yscalar
+    @test lazyder*(yvec,) == lazyder*yvec
+
+    @test (yscalar,)*lazyder == yscalar*lazyder
+    @test (yvec,)*lazyder == yvec*lazyder
+
+    # two input function
+    der1 = AD.derivative(fdm_backend, fder, xscalar, yscalar)
+    der2 = (
+        fdm_backend.alg(x -> fder(x, yscalar), xscalar),
+        fdm_backend.alg(y -> fder(xscalar, y), yscalar),
+    )
+
+    lazyder = AD.LazyDerivative(fdm_backend, fder, (xscalar, yscalar))
+
+    # multiplication with scalar
+    @test der1.*yscalar == der2.*yscalar
+    @test lazyder*yscalar == der1.*yscalar
+    @test lazyder*yscalar isa Tuple
+
+    @test yscalar.*der1 == yscalar.*der2
+    @test yscalar*lazyder == yscalar.*der1
+    @test yscalar*lazyder isa Tuple
+
+    # multiplication with array
+    @test (der1[1]*yvec, der1[2]*yvec) == (der2[1]*yvec, der2[2]*yvec)
+    @test lazyder*yvec == (der1[1]*yvec, der1[2]*yvec)
+    @test lazyder*yvec isa Tuple
+
+    @test (yvec*der1[1], yvec*der1[2]) == (yvec*der2[1], yvec*der2[2])
+    @test yvec*lazyder == (yvec*der1[1], yvec*der1[2])
+    @test lazyder*yvec isa Tuple
+
+    # multiplication with tuple
+    @test lazyder*(yscalar,) == lazyder*yscalar
+    @test lazyder*(yvec,) == lazyder*yvec
+
+    @test (yscalar,)*lazyder == yscalar*lazyder
+    @test (yvec,)*lazyder == yvec*lazyder
+end
+
 @testset "AbstractDifferentiation.jl" begin
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -214,6 +284,11 @@ end
             test_fdm_j′vp(fdm_backend1)
             test_fdm_j′vp(fdm_backend2)
             test_fdm_j′vp(fdm_backend3)
+        end
+        @testset "Lazy Derivative" begin
+            test_fdm_lazy_derivatives(fdm_backend1)
+            test_fdm_lazy_derivatives(fdm_backend2)
+            test_fdm_lazy_derivatives(fdm_backend3)
         end
     end
 end

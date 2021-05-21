@@ -31,8 +31,14 @@ primalvalue(x::Tuple) = map(primalvalue, x)
 primalvalue(x) = x
 
 function derivative(ab::AbstractBackend, f, xs::Number...)
-    return getindex.(jacobian(lowest(ab), f, xs...), 1)
+    der = getindex.(jacobian(lowest(ab), f, xs...), 1)
+    if der isa Tuple
+        return der
+    else
+        return (der,)
+    end
 end
+
 function gradient(ab::AbstractBackend, f, xs...)
     return adjoint.(jacobian(lowest(ab), f, xs...))
 end
@@ -241,12 +247,31 @@ struct LazyDerivative{B, F, X}
     f::F
     xs::X
 end
+
 function Base.:*(d::LazyDerivative, y)
-    return derivative(d.ab, d.f, d.xs...) * y
+    return derivative(d.backend, d.f, d.xs...) * y
 end
+
 function Base.:*(y, d::LazyDerivative)
-    return y * derivative(d.ab, d.f, d.xs...)
+    return y * derivative(d.backend, d.f, d.xs...)
 end
+
+function Base.:*(d::LazyDerivative, y::Union{Number,Tuple})
+    return derivative(d.backend, d.f, d.xs...) .* y
+end
+
+function Base.:*(y::Union{Number,Tuple}, d::LazyDerivative)
+    return y .* derivative(d.backend, d.f, d.xs...)
+end
+
+function Base.:*(d::LazyDerivative, y::AbstractArray)
+    return map((d)-> d*y, derivative(d.backend, d.f, d.xs...))
+end
+
+function Base.:*(y::AbstractArray, d::LazyDerivative)
+    return map((d)-> y*d, derivative(d.backend, d.f, d.xs...))
+end
+
 
 struct LazyGradient{B, F, X}
     backend::B
