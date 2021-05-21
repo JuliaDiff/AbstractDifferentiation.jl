@@ -278,8 +278,26 @@ struct LazyGradient{B, F, X}
     f::F
     xs::X
 end
-Base.:*(d::LazyGradient, y) = gradient(d.ab, d.f, d.xs...) * y
-Base.:*(y, d::LazyGradient) = y * gradient(d.ab, d.f, d.xs...)
+Base.:*(d::LazyGradient, y) = gradient(d.backend, d.f, d.xs...) * y
+Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
+
+
+function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
+    if d.xs isa Tuple
+        return gradient(d.backend, d.f, d.xs...) .* y
+    else
+        return gradient(d.backend, d.f, d.xs) .* y
+    end
+end
+
+function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
+    if d.xs isa Tuple
+        return y .* gradient(d.backend, d.f, d.xs...)
+    else
+        return y .* gradient(d.backend, d.f, d.xs)
+    end
+end
+
 
 struct LazyJacobian{B, F, X}
     backend::B

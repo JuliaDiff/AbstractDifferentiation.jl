@@ -252,6 +252,44 @@ function test_fdm_lazy_derivatives(fdm_backend)
     @test (yvec,)*lazyder == yvec*lazyder
 end
 
+function test_fdm_lazy_gradients(fdm_backend)
+    # single input function
+    grad1 = AD.gradient(fdm_backend, x->fgrad(x, yvec), xvec)
+    grad2 = FDM.grad(fdm_backend.alg, x->fgrad(x, yvec), xvec)
+    lazygrad = AD.LazyGradient(fdm_backend, x->fgrad(x, yvec), xvec)
+
+    # multiplication with scalar
+    @test norm.(grad1.*yscalar .- grad2.*yscalar) == (0,)
+    @test norm.(lazygrad*yscalar .- grad1.*yscalar) == (0,)
+    @test lazygrad*yscalar isa Tuple
+
+    @test norm.(yscalar.*grad1 .- yscalar.*grad2) == (0,)
+    @test norm.(yscalar*lazygrad .- yscalar.*grad1) == (0,)
+    @test yscalar*lazygrad isa Tuple
+
+    # multiplication with tuple
+    @test lazygrad*(yscalar,) == lazygrad*yscalar
+    @test (yscalar,)*lazygrad == yscalar*lazygrad
+
+    # two input function
+    grad1 = AD.gradient(fdm_backend, fgrad, xvec, yvec)
+    grad2 = FDM.grad(fdm_backend.alg, fgrad, xvec, yvec)
+    lazygrad = AD.LazyGradient(fdm_backend, fgrad, (xvec, yvec))
+
+    # multiplication with scalar
+    @test norm.(grad1.*yscalar .- grad2.*yscalar) == (0,0)
+    @test norm.(lazygrad*yscalar .- grad1.*yscalar) == (0,0)
+    @test lazygrad*yscalar isa Tuple
+
+    @test norm.(yscalar.*grad1 .- yscalar.*grad2) == (0,0)
+    @test norm.(yscalar*lazygrad .- yscalar.*grad1) == (0,0)
+    @test yscalar*lazygrad isa Tuple
+
+    # multiplication with tuple
+    @test lazygrad*(yscalar,) == lazygrad*yscalar
+    @test (yscalar,)*lazygrad == yscalar*lazygrad
+end
+
 @testset "AbstractDifferentiation.jl" begin
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -289,6 +327,11 @@ end
             test_fdm_lazy_derivatives(fdm_backend1)
             test_fdm_lazy_derivatives(fdm_backend2)
             test_fdm_lazy_derivatives(fdm_backend3)
+        end
+        @testset "Lazy Gradient" begin
+            test_fdm_lazy_gradients(fdm_backend1)
+            test_fdm_lazy_gradients(fdm_backend2)
+            test_fdm_lazy_gradients(fdm_backend3)
         end
     end
 end
