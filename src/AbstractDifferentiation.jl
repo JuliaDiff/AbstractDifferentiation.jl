@@ -305,7 +305,16 @@ struct LazyJacobian{B, F, X}
     xs::X
 end
 function Base.:*(d::LazyJacobian, ys)
-    return pushforward_function(d.ab, d.f, d.xs...)(ys)
+    if d.xs isa Tuple
+        jvp = pushforward_function(d.backend, d.f, d.xs...)(ys)
+        if jvp isa Tuple
+            return vec.(jvp)
+        else
+            return vec(jvp)
+        end
+    else
+        return vec.(pushforward_function(d.backend, d.f, d.xs)(ys))
+    end
 end
 function Base.:*(ys, d::LazyJacobian)
     if ys isa Tuple
@@ -313,8 +322,42 @@ function Base.:*(ys, d::LazyJacobian)
     else
         ya = adjoint(ys)
     end
-    return pullback_function(d.ab, d.f, d.xs...)(ya)
+    if d.xs isa Tuple
+        return pullback_function(d.backend, d.f, d.xs...)(ya)
+    else
+        return pullback_function(d.backend, d.f, d.xs)(ya)
+    end
 end
+
+function Base.:*(d::LazyJacobian, ys::Number)
+    if d.xs isa Tuple
+        return jacobian(d.backend, d.f, d.xs...) .* ys
+    else
+        return jacobian(d.backend, d.f, d.xs) .* ys
+    end
+end
+
+function Base.:*(ys::Number, d::LazyJacobian)
+    if d.xs isa Tuple
+        return jacobian(d.backend, d.f, d.xs...) .* ys
+    else
+        return jacobian(d.backend, d.f, d.xs) .* ys
+    end
+end
+
+function Base.:*(d::LazyJacobian, ys::AbstractArray)
+    if d.xs isa Tuple
+        return vec.(pushforward_function(d.backend, d.f, d.xs...)((ys,)))
+    else
+        vjp = (pushforward_function(d.backend, d.f, d.xs)((ys,)))
+        if vjp isa Tuple
+            return vec.(vjp)
+        else
+            return (vec(vjp),)
+        end
+    end
+end
+
 
 struct LazyHessian{B, F, X}
     backend::B

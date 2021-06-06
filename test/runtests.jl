@@ -21,7 +21,9 @@ end
 FDMBackend2() = FDMBackend2(central_fdm(5, 1))
 const fdm_backend2 = FDMBackend2()
 AD.@primitive function pushforward_function(ab::FDMBackend2, f, xs...)
-    return (vs) -> jvp(ab.alg, f, tuple.(xs, vs)...)
+    return function (vs)
+        jvp(ab.alg, f, tuple.(xs, vs)...)
+    end
 end
 
 struct FDMBackend3{A} <: AD.AbstractFiniteDifference
@@ -148,19 +150,25 @@ end
 function test_fdm_jvp(fdm_backend)
     v = (rand(length(xvec)), rand(length(yvec)))
 
-    # augmented version of v
-    identity_like = AD.identity_matrix_like(v)
-    vaug = map(identity_like) do identity_like_i
-        identity_like_i .* v
-    end
+    if fdm_backend isa FDMBackend2 # augmented version of v
+        identity_like = AD.identity_matrix_like(v)
+        vaug = map(identity_like) do identity_like_i
+            identity_like_i .* v
+        end
 
-    pf1 = map(v->AD.pushforward_function(fdm_backend2, fjac, xvec, yvec)(v), vaug)
+        pf1 = map(v->AD.pushforward_function(fdm_backend, fjac, xvec, yvec)(v), vaug)
+        ((valvec1, pf3x), (valvec2, pf3y)) = map(v->AD.value_and_pushforward_function(fdm_backend, fjac, xvec, yvec)(v), vaug)
+    else
+        pf1 = AD.pushforward_function(fdm_backend, fjac, xvec, yvec)(v)
+        valvec, pf3 = AD.value_and_pushforward_function(fdm_backend, fjac, xvec, yvec)(v)
+        ((valvec1, pf3x), (valvec2, pf3y)) = (valvec, pf3[1]), (valvec, pf3[2])
+    end
     pf2 = (
         FDM.jvp(fdm_backend.alg, x -> fjac(x, yvec), (xvec, v[1])),
         FDM.jvp(fdm_backend.alg, y -> fjac(xvec, y), (yvec, v[2])),
     )
     @test norm.(pf1 .- pf2) == (0, 0)
-    ((valvec1, pf3x), (valvec2, pf3y)) = map(v->AD.value_and_pushforward_function(fdm_backend2, fjac, xvec, yvec)(v), vaug)
+
     @test valvec1 == fjac(xvec, yvec)
     @test valvec2 == fjac(xvec, yvec)
     @test norm.((pf3x,pf3y) .- pf1) == (0, 0)
@@ -290,6 +298,77 @@ function test_fdm_lazy_gradients(fdm_backend)
     @test (yscalar,)*lazygrad == yscalar*lazygrad
 end
 
+function test_fdm_lazy_jacobians(fdm_backend)
+    # single input function
+    jac1 = AD.jacobian(fdm_backend, x->fjac(x, yvec), xvec)
+    jac2 = FDM.jacobian(fdm_backend.alg, x->fjac(x, yvec), xvec)
+    lazyjac = AD.LazyJacobian(fdm_backend, x->fjac(x, yvec), xvec)
+
+    # multiplication with scalar
+    @test norm.(jac1.*yscalar .- jac2.*yscalar) == (0,)
+    @test norm.(lazyjac*yscalar .- jac1.*yscalar) == (0,)
+    @test lazyjac*yscalar isa Tuple
+
+    @test norm.(yscalar.*jac1 .- yscalar.*jac2) == (0,)
+    @test norm.(yscalar*lazyjac .- yscalar.*jac1) == (0,)
+    @test yscalar*lazyjac isa Tuple
+
+    w = adjoint(rand(length(fjac(xvec, yvec))))
+    v = (rand(length(xvec)),rand(length(xvec)))
+
+    # vjp
+    pb1 = FDM.j′vp(fdm_backend.alg, x -> fjac(x, yvec), w, xvec)
+    res = w*lazyjac
+    @test minimum(isapprox.(pb1, res, atol=1e-10))
+    @test res isa Tuple
+
+    # jvp
+    pf1 = (FDM.jvp(fdm_backend.alg, x -> fjac(x, yvec), (xvec, v[1])),)
+    res = lazyjac*v[1]
+    @test minimum(isapprox.(pf1, res, atol=1e-10))
+    @test res isa Tuple
+
+    # two input function
+    jac1 = AD.jacobian(fdm_backend, fjac, xvec, yvec)
+    jac2 = FDM.jacobian(fdm_backend.alg, fjac, xvec, yvec)
+    lazyjac = AD.LazyJacobian(fdm_backend, fjac, (xvec, yvec))
+
+    # multiplication with scalar
+    @test norm.(jac1.*yscalar .- jac2.*yscalar) == (0,0)
+    @test norm.(lazyjac*yscalar .- jac1.*yscalar) == (0,0)
+    @test lazyjac*yscalar isa Tuple
+
+    @test norm.(yscalar.*jac1 .- yscalar.*jac2) == (0,0)
+    @test norm.(yscalar*lazyjac .- yscalar.*jac1) == (0,0)
+    @test yscalar*lazyjac isa Tuple
+
+    # vjp
+    pb1 = FDM.j′vp(fdm_backend.alg, fjac, w, xvec, yvec)
+    res = w*lazyjac
+    @test minimum(isapprox.(pb1, res, atol=1e-10))
+    @test res isa Tuple
+
+    # jvp
+    pf1 = (
+        FDM.jvp(fdm_backend.alg, x -> fjac(x, yvec), (xvec, v[1])),
+        FDM.jvp(fdm_backend.alg, y -> fjac(xvec, y), (yvec, v[2])),
+    )
+
+    if fdm_backend isa FDMBackend2 # augmented version of v
+        identity_like = AD.identity_matrix_like(v)
+        vaug = map(identity_like) do identity_like_i
+            identity_like_i .* v
+        end
+
+        res = map(v->lazyjac*v, vaug)
+    else
+        res = lazyjac*v
+    end
+
+    @test minimum(isapprox.(pf1, res, atol=1e-10))
+    @test res isa Tuple
+end
+
 @testset "AbstractDifferentiation.jl" begin
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -332,6 +411,11 @@ end
             test_fdm_lazy_gradients(fdm_backend1)
             test_fdm_lazy_gradients(fdm_backend2)
             test_fdm_lazy_gradients(fdm_backend3)
+        end
+        @testset "Lazy Jacobian" begin
+            test_fdm_lazy_jacobians(fdm_backend1)
+            test_fdm_lazy_jacobians(fdm_backend2)
+            test_fdm_lazy_jacobians(fdm_backend3)
         end
     end
 end
