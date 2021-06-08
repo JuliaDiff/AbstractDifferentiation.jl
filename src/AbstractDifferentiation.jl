@@ -281,7 +281,6 @@ end
 Base.:*(d::LazyGradient, y) = gradient(d.backend, d.f, d.xs...) * y
 Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
-
 function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
     if d.xs isa Tuple
         return gradient(d.backend, d.f, d.xs...) .* y
@@ -304,6 +303,7 @@ struct LazyJacobian{B, F, X}
     f::F
     xs::X
 end
+
 function Base.:*(d::LazyJacobian, ys)
     if d.xs isa Tuple
         jvp = pushforward_function(d.backend, d.f, d.xs...)(ys)
@@ -316,6 +316,7 @@ function Base.:*(d::LazyJacobian, ys)
         return vec.(pushforward_function(d.backend, d.f, d.xs)(ys))
     end
 end
+
 function Base.:*(ys, d::LazyJacobian)
     if ys isa Tuple
         ya = adjoint.(ys)
@@ -364,13 +365,20 @@ struct LazyHessian{B, F, X}
     f::F
     xs::X
 end
+
 function Base.:*(d::LazyHessian, ys)
-    return pushforward_function(
-        secondlowest(d.ab),
-        (xs...,) -> gradient(lowest(d.ab), d.f, xs...),
-        d.xs...,
-    )(ys)
+    if d.xs isa Tuple
+        return pushforward_function(
+            secondlowest(d.backend),
+                (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)(ys)
+    else
+        return pushforward_function(
+            secondlowest(d.backend),
+                (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)(ys)
+    end
+
 end
+
 function Base.:*(ys, d::LazyHessian)
     if ys isa Tuple
         ya = adjoint.(ys)
@@ -378,10 +386,59 @@ function Base.:*(ys, d::LazyHessian)
         ya = adjoint(ys)
     end
     return pullback_function(
-        secondlowest(d.ab),
-        (xs...,) -> gradient(lowest(d.ab), d.f, xs...),
+        secondlowest(d.backend),
+        (xs...,) -> gradient(lowest(d.backend), d.f, xs...),
         d.xs...,
     )(ya)
+end
+
+function Base.:*(d::LazyHessian, ys::Number)
+    if d.xs isa Tuple
+        return hessian(d.backend, d.f, d.xs...).*ys
+    else
+        return hessian(d.backend, d.f, d.xs).*ys
+    end
+end
+
+function Base.:*(ys::Number, d::LazyHessian)
+    if d.xs isa Tuple
+        return ys.*hessian(d.backend, d.f, d.xs...)
+    else
+        return ys.*hessian(d.backend, d.f, d.xs)
+    end
+end
+
+function Base.:*(d::LazyHessian, ys::AbstractArray)
+    if d.xs isa Tuple
+        return pushforward_function(
+            secondlowest(d.backend),
+                (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)((ys,))
+    else
+        return pushforward_function(
+            secondlowest(d.backend),
+                (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)((ys,))
+    end
+end
+
+function Base.:*(ys::AbstractArray, d::LazyHessian)
+    if ys isa Tuple
+        ya = adjoint.(ys)
+    else
+        ya = adjoint(ys)
+    end
+    if d.xs isa Tuple
+        return pullback_function(
+            secondlowest(d.backend),
+            (xs...,) -> gradient(lowest(d.backend), d.f, xs...),
+            d.xs...,
+            )(ya)
+    else
+        return pullback_function(
+            secondlowest(d.backend),
+            (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],
+            d.xs,
+            )(ya)
+    end
 end
 
 function lazyderivative(ab::AbstractBackend, f, xs::Number...)

@@ -369,6 +369,36 @@ function test_fdm_lazy_jacobians(fdm_backend)
     @test res isa Tuple
 end
 
+function test_fdm_lazy_hessians(fdm_backend)
+    # single input function
+    fhess = x -> fgrad(x, yvec)
+    hess1 = (dfgraddxdx(xvec,yvec),)
+    lazyhess = AD.LazyHessian(fdm_backend, x->fgrad(x, yvec), xvec)
+
+    # multiplication with scalar
+    @test minimum(isapprox.(lazyhess*yscalar, hess1.*yscalar, atol=1e-10))
+    @test lazyhess*yscalar isa Tuple
+
+    # multiplication with scalar
+    @test minimum(isapprox.(yscalar*lazyhess, yscalar.*hess1, atol=1e-10))
+    @test yscalar*lazyhess isa Tuple
+
+    w = adjoint(rand(length(xvec)))
+    v = rand(length(xvec))
+
+    # Hvp
+    Hv = map(h->h*v, hess1)
+    res = lazyhess*v
+    @test minimum(isapprox.(Hv, res, atol=1e-10))
+    @test res isa Tuple
+
+    # H′vp
+    wH = map(h->h'*adjoint(w), hess1)
+    res = w*lazyhess
+    @test minimum(isapprox.(wH, res, atol=1e-10))
+    @test res isa Tuple
+end
+
 @testset "AbstractDifferentiation.jl" begin
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -416,6 +446,11 @@ end
             test_fdm_lazy_jacobians(fdm_backend1)
             test_fdm_lazy_jacobians(fdm_backend2)
             test_fdm_lazy_jacobians(fdm_backend3)
+        end
+        @testset "Lazy Hessian" begin
+            test_fdm_lazy_hessians(fdm_backend1)
+            test_fdm_lazy_hessians(fdm_backend2)
+            test_fdm_lazy_hessians(fdm_backend3)
         end
     end
 end
