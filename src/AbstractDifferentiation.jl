@@ -305,15 +305,18 @@ struct LazyJacobian{B, F, X}
 end
 
 function Base.:*(d::LazyJacobian, ys)
+    if !(ys isa Tuple)
+        ys = (ys, )
+    end
     if d.xs isa Tuple
-        jvp = pushforward_function(d.backend, d.f, d.xs...)(ys)
-        if jvp isa Tuple
-            return vec.(jvp)
-        else
-            return vec(jvp)
-        end
+        vjp = pushforward_function(d.backend, d.f, d.xs...)(ys)
     else
-        return vec.(pushforward_function(d.backend, d.f, d.xs)(ys))
+        vjp = pushforward_function(d.backend, d.f, d.xs)(ys)
+    end
+    if vjp isa Tuple
+        return vjp
+    else
+        return (vjp,)
     end
 end
 
@@ -346,19 +349,6 @@ function Base.:*(ys::Number, d::LazyJacobian)
     end
 end
 
-function Base.:*(d::LazyJacobian, ys::AbstractArray)
-    if d.xs isa Tuple
-        return vec.(pushforward_function(d.backend, d.f, d.xs...)((ys,)))
-    else
-        vjp = (pushforward_function(d.backend, d.f, d.xs)((ys,)))
-        if vjp isa Tuple
-            return vec.(vjp)
-        else
-            return (vec(vjp),)
-        end
-    end
-end
-
 
 struct LazyHessian{B, F, X}
     backend::B
@@ -367,60 +357,22 @@ struct LazyHessian{B, F, X}
 end
 
 function Base.:*(d::LazyHessian, ys)
+    if !(ys isa Tuple)
+        ys = (ys, )
+    end
+
     if d.xs isa Tuple
         return pushforward_function(
             secondlowest(d.backend),
-                (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)(ys)
+            (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)(ys)
     else
         return pushforward_function(
             secondlowest(d.backend),
-                (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)(ys)
+            (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)(ys)
     end
-
 end
 
 function Base.:*(ys, d::LazyHessian)
-    if ys isa Tuple
-        ya = adjoint.(ys)
-    else
-        ya = adjoint(ys)
-    end
-    return pullback_function(
-        secondlowest(d.backend),
-        (xs...,) -> gradient(lowest(d.backend), d.f, xs...),
-        d.xs...,
-    )(ya)
-end
-
-function Base.:*(d::LazyHessian, ys::Number)
-    if d.xs isa Tuple
-        return hessian(d.backend, d.f, d.xs...).*ys
-    else
-        return hessian(d.backend, d.f, d.xs).*ys
-    end
-end
-
-function Base.:*(ys::Number, d::LazyHessian)
-    if d.xs isa Tuple
-        return ys.*hessian(d.backend, d.f, d.xs...)
-    else
-        return ys.*hessian(d.backend, d.f, d.xs)
-    end
-end
-
-function Base.:*(d::LazyHessian, ys::AbstractArray)
-    if d.xs isa Tuple
-        return pushforward_function(
-            secondlowest(d.backend),
-                (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)((ys,))
-    else
-        return pushforward_function(
-            secondlowest(d.backend),
-                (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)((ys,))
-    end
-end
-
-function Base.:*(ys::AbstractArray, d::LazyHessian)
     if ys isa Tuple
         ya = adjoint.(ys)
     else
@@ -440,6 +392,23 @@ function Base.:*(ys::AbstractArray, d::LazyHessian)
             )(ya)
     end
 end
+
+function Base.:*(d::LazyHessian, ys::Number)
+    if d.xs isa Tuple
+        return hessian(d.backend, d.f, d.xs...).*ys
+    else
+        return hessian(d.backend, d.f, d.xs).*ys
+    end
+end
+
+function Base.:*(ys::Number, d::LazyHessian)
+    if d.xs isa Tuple
+        return ys.*hessian(d.backend, d.f, d.xs...)
+    else
+        return ys.*hessian(d.backend, d.f, d.xs)
+    end
+end
+
 
 function lazyderivative(ab::AbstractBackend, f, xs::Number...)
     return LazyDerivative(ab, f, xs)
@@ -511,7 +480,9 @@ function define_pushforward_function_and_friends(fdef)
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
+                # needed for the computation of the Hessian
                 ret = hcat.(mapslices(identity_like[1], dims=1) do cols
+                    # cols loop over basis states   
                     pf = pff((cols,))
                     if typeof(pf) <: AbstractVector
                         return (pf, )

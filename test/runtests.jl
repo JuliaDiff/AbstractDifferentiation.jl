@@ -360,7 +360,7 @@ function test_fdm_lazy_jacobians(fdm_backend)
             identity_like_i .* v
         end
 
-        res = map(v->lazyjac*v, vaug)
+        res = map(v->(lazyjac*v)[1], vaug)
     else
         res = lazyjac*v
     end
