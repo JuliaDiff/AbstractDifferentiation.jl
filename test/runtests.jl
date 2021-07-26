@@ -52,6 +52,7 @@ fgrad(x, y) = prod(x) + sum(y ./ (1:length(y)))
 dfgraddx(x, y) = prod(x)./x
 dfgraddy(x, y) = one(eltype(y)) ./ (1:length(y))
 dfgraddxdx(x, y) = prod(x)./(x*x') - Diagonal(diag(prod(x)./(x*x')))
+dfgraddydy(x, y) = zeros(length(y),length(y))
 
 function fjac(x, y)
     x + Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U) * y
@@ -89,6 +90,13 @@ function test_fdm_derivatives(fdm_backend)
     @test der3 .- der1 == (0, 0)
     der_exact = (dfderdx(xscalar,yscalar), dfderdy(xscalar,yscalar))
     @test minimum(isapprox.(der_exact, der1, rtol=1e-10))
+    # test if single input (no tuple works)
+    valscalara, dera = AD.value_and_derivative(fdm_backend, x -> fder(x, yscalar), xscalar)
+    valscalarb, derb = AD.value_and_derivative(fdm_backend, y -> fder(xscalar, y), yscalar)
+    @test valscalar == valscalara
+    @test valscalar == valscalarb
+    @test isapprox(dera[1], der1[1], rtol=1e-10)
+    @test isapprox(derb[1], der1[2], rtol=1e-10)
 end
 
 function test_fdm_gradients(fdm_backend)
@@ -102,6 +110,13 @@ function test_fdm_gradients(fdm_backend)
     @test minimum(isapprox.(grad_exact, grad1, rtol=1e-10))
     @test xvec == xvec2
     @test yvec == yvec2
+    # test if single input (no tuple works)
+    valscalara, grada = AD.value_and_gradient(fdm_backend, x -> fgrad(x, yvec), xvec)
+    valscalarb, gradb = AD.value_and_gradient(fdm_backend, y -> fgrad(xvec, y), yvec)
+    @test valscalar == valscalara
+    @test valscalar == valscalarb
+    @test isapprox(grada[1], grad1[1], rtol=1e-10)
+    @test isapprox(gradb[1], grad1[2], rtol=1e-10)
 end
 
 function test_fdm_jacobians(fdm_backend)
@@ -115,9 +130,21 @@ function test_fdm_jacobians(fdm_backend)
     @test minimum(isapprox.(grad_exact, jac1, rtol=1e-10))
     @test xvec == xvec2
     @test yvec == yvec2
+    # test if single input (no tuple works)
+    valveca, jaca = AD.value_and_jacobian(fdm_backend, x -> fjac(x, yvec), xvec)
+    valvecb, jacb = AD.value_and_jacobian(fdm_backend, y -> fjac(xvec, y), yvec)
+    @test valvec == valveca
+    @test valvec == valvecb
+    @test isapprox(jaca[1], jac1[1], rtol=1e-10)
+    @test isapprox(jacb[1], jac1[2], rtol=1e-10)
 end
 
 function test_fdm_hessians(fdm_backend)
+    H1 = AD.hessian(fdm_backend, fgrad, xvec, yvec)
+    @test dfgraddxdx(xvec,yvec) ≈ H1[1] atol=1e-10
+    @test dfgraddydy(xvec,yvec) ≈ H1[2] atol=1e-10
+
+    # test if single input (no tuple works)
     fhess = x -> fgrad(x, yvec)
     hess1 = AD.hessian(fdm_backend, fhess, xvec)
     hess2 = FDM.jacobian(

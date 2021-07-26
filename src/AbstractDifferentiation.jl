@@ -40,13 +40,23 @@ function derivative(ab::AbstractBackend, f, xs::Number...)
 end
 
 function gradient(ab::AbstractBackend, f, xs...)
-    return adjoint.(jacobian(lowest(ab), f, xs...))
+    return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
 function hessian(ab::AbstractBackend, f, xs...)
-    return jacobian(secondlowest(ab), (xs...,) -> begin
-        gradient(lowest(ab), f, xs...)
-    end, xs...)
+    xss = collect((xs...,)) 
+    counter = 0
+    # gradient returns tuple of gradient values with respect to inputs x,y ∈ xs
+    # Hessian is the Jacobian of the individual gradients, i.e., the tuple of matrices 
+    # defined by ∂x∂x f, ∂y∂y f, in the case of a scalar valued function `f`.  
+    hess = map((xs...,)) do x
+        counter += 1
+        _f = _x->f(setindex!(deepcopy(xss),x,counter)...)
+        return jacobian(secondlowest(ab),(x,)-> begin
+            return gradient(lowest(ab), _f, x)
+            end, x)[1]
+    end
+    return hess
 end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -55,7 +65,7 @@ function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
 end
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
-    return value, adjoint.(jacs)
+    return value, reshape.(adjoint.(jacs),size.(xs))
 end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
@@ -481,9 +491,12 @@ function define_pushforward_function_and_friends(fdef)
                 end
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian
+                println("define_pushforward_function_and_friends")
+                @show identity_like
                 ret = hcat.(mapslices(identity_like[1], dims=1) do cols
                     # cols loop over basis states   
                     pf = pff((cols,))
+                    @show cols pf
                     if typeof(pf) <: AbstractVector
                         return (pf, )
                     elseif typeof(pf) <: AbstractMatrix
@@ -518,6 +531,9 @@ function define_pullback_function_and_friends(fdef)
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
+                # needed for Hessian computation:
+                # value is a (grad,). Then, identity_like is a (matrix,).
+                # cols loops over columns of the matrix  
                 return vcat.(mapslices(identity_like[1], dims=1) do cols
                     adjoint.(value_and_pbf((cols,))[2])
                 end ...)
