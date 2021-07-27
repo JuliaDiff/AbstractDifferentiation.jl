@@ -51,7 +51,7 @@ function hessian(ab::AbstractBackend, f, xs...)
     # defined by ∂x∂x f, ∂y∂y f, in the case of a scalar valued function `f`.  
     hess = map((xs...,)) do x
         counter += 1
-        _f = _x->f(setindex!(deepcopy(xss),x,counter)...)
+        _f = _x->f(setindex!(deepcopy(xss),_x,counter)...)
         return jacobian(secondlowest(ab),(x,)-> begin
             return gradient(lowest(ab), _f, x)
             end, x)[1]
@@ -490,17 +490,13 @@ function define_pushforward_function_and_friends(fdef)
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
-                # needed for the computation of the Hessian
-                println("define_pushforward_function_and_friends")
-                @show identity_like
+                # needed for the computation of the Hessian and Jacobian
                 ret = hcat.(mapslices(identity_like[1], dims=1) do cols
                     # cols loop over basis states   
                     pf = pff((cols,))
-                    @show cols pf
                     if typeof(pf) <: AbstractVector
+                        # to make the hcat. work / get correct matrix-like, non-flat output dimension
                         return (pf, )
-                    elseif typeof(pf) <: AbstractMatrix
-                        return (transpose(pf), )
                     else
                         return pf
                     end
