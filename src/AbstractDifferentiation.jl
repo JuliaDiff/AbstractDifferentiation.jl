@@ -51,6 +51,7 @@ function hessian(ab::AbstractBackend, f, xs...)
     # defined by ∂x∂x f, ∂y∂y f, in the case of a scalar valued function `f`.  
     hess = map((xs...,)) do x
         counter += 1
+        # needs to be modified for forward mode AD; no method matching error from setindex!
         _f = _x->f(setindex!(deepcopy(xss),_x,counter)...)
         return jacobian(secondlowest(ab),(x,)-> begin
             return gradient(lowest(ab), _f, x)
