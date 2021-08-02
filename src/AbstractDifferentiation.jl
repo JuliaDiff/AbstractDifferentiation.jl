@@ -44,20 +44,13 @@ function gradient(ab::AbstractBackend, f, xs...)
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
 function hessian(ab::AbstractBackend, f, xs...)
-    xss = collect((xs...,)) 
-    counter = 0
-    # gradient returns tuple of gradient values with respect to inputs x,y ∈ xs
-    # Hessian is the Jacobian of the individual gradients, i.e., the tuple of matrices 
-    # defined by ∂x∂x f, ∂y∂y f, in the case of a scalar valued function `f`.  
-    hess = map((xs...,)) do x
-        counter += 1
-        # needs to be modified for forward mode AD; no method matching error from setindex!
-        _f = _x->f(setindex!(deepcopy(xss),_x,counter)...)
-        return jacobian(secondlowest(ab),(x,)-> begin
-            return gradient(lowest(ab), _f, x)
-            end, x)[1]
+    if xs isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(xs) == 1
     end
-    return hess
+    return jacobian(secondlowest(ab), (xs...,) -> begin
+        gradient(lowest(ab), f, xs...)
+    end, xs...)
 end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -168,7 +161,10 @@ function value_and_pushforward_function(
     xs...,
 )
     return (ds) -> begin
-        @assert ds isa Tuple && length(ds) == length(xs)
+        if !(ds isa Tuple)
+            ds = (ds,)    
+        end
+        @assert length(ds) == length(xs)
         local value
         primalcalled = false
         if ab isa AbstractFiniteDifference
@@ -183,6 +179,7 @@ function value_and_pushforward_function(
             end
             return vs
         end, xs...)(ds)
+        
         return value, pf
     end
 end
@@ -268,10 +265,16 @@ function Base.:*(y, d::LazyDerivative)
 end
 
 function Base.:*(d::LazyDerivative, y::Union{Number,Tuple})
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     return derivative(d.backend, d.f, d.xs...) .* y
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyDerivative)
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     return y .* derivative(d.backend, d.f, d.xs...)
 end
 
@@ -293,6 +296,9 @@ Base.:*(d::LazyGradient, y) = gradient(d.backend, d.f, d.xs...) * y
 Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
 function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     if d.xs isa Tuple
         return gradient(d.backend, d.f, d.xs...) .* y
     else
@@ -301,6 +307,9 @@ function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     if d.xs isa Tuple
         return y .* gradient(d.backend, d.f, d.xs...)
     else
