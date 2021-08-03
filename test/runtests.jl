@@ -1,6 +1,7 @@
 using AbstractDifferentiation
 using Test, FiniteDifferences, LinearAlgebra
 using ForwardDiff
+using Zygote
 using Random
 Random.seed!(1234)
 
@@ -87,9 +88,33 @@ AD.@primitive function pushforward_function(ab::ForwardDiffBackend2, f, xs...)
     end
 end
 AD.primalvalue(::ForwardDiffBackend2, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
-
 ##
 
+## Zygote
+struct ZygoteBackend1 <: AD.AbstractReverseMode end
+const zygote_backend1 = ZygoteBackend1()
+AD.@primitive function pullback_function(ab::ZygoteBackend1, f, xs...)
+    return function (vs)
+        # Supports only single output
+        _, back = Zygote.pullback(f, xs...)
+        if vs isa AbstractVector
+            back(vs)
+        else
+            @assert length(vs) == 1
+            back(vs[1])
+        end
+    end
+end
+##
+
+struct ZygoteBackend <: AD.AbstractReverseMode end
+AD.@primitive function pullback_function(ab::ZygoteBackend, f, xs...)
+    return function (vs)
+        # Supports only single output and tuple as input
+        _, back = Zygote.pullback(f, xs...)
+        back(vs[1])
+    end
+end
 
 fder(x, y) = exp(y) * x + y * log(x)
 dfderdx(x, y) = exp(y) + y * 1/x
@@ -530,8 +555,8 @@ end
             test_jacobians(forwarddiff_backend2)
         end
         @testset "Hessian" begin
-            #test_hessians(forwarddiff_backend1; multiple_inputs=false)
-            #test_hessians(forwarddiff_backend2)
+            test_hessians(forwarddiff_backend1; multiple_inputs=false)
+            test_hessians(forwarddiff_backend2)
         end
         @testset "jvp" begin
             test_jvp(forwarddiff_backend1; multiple_inputs=false)
@@ -554,8 +579,40 @@ end
             test_lazy_jacobians(forwarddiff_backend2)
         end
         @testset "Lazy Hessian" begin
-            #test_lazy_hessians(forwarddiff_backend1; multiple_inputs=false)
-            #test_lazy_hessians(forwarddiff_backend2)
+            test_lazy_hessians(forwarddiff_backend1; multiple_inputs=false)
+            test_lazy_hessians(forwarddiff_backend2)
+        end
+    end
+    @testset "Zygote" begin
+        @testset "Derivative" begin
+            test_derivatives(zygote_backend1)
+        end
+        @testset "Gradient" begin
+            test_gradients(zygote_backend1)
+        end
+        @testset "Jacobian" begin
+            test_jacobians(zygote_backend1)
+        end
+        @testset "Hessian" begin
+            test_hessians(zygote_backend1)
+        end
+        @testset "jvp" begin
+            test_jvp(zygote_backend1)
+        end
+        @testset "j′vp" begin
+            test_j′vp(zygote_backend1)
+        end
+        @testset "Lazy Derivative" begin
+            test_lazy_derivatives(zygote_backend1)
+        end
+        @testset "Lazy Gradient" begin
+            test_lazy_gradients(zygote_backend1)
+        end
+        @testset "Lazy Jacobian" begin
+            test_lazy_jacobians(zygote_backend1)
+        end
+        @testset "Lazy Hessian" begin
+            test_lazy_hessians(zygote_backend1)
         end
     end
 end
