@@ -16,7 +16,11 @@ struct HigherOrderBackend{B} <: AbstractBackend
 end
 reduceorder(b::AbstractBackend) = b
 function reduceorder(b::HigherOrderBackend)
-    return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
+    if length(b.backends)==1 
+        return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
+    else
+        return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
+    end
 end
 lowest(b::AbstractBackend) = b
 lowest(b::HigherOrderBackend) = b.backends[end]
@@ -43,6 +47,10 @@ function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
+function jacobian(ab::HigherOrderBackend, f, xs...) 
+    jacobian(lowest(ab), f, xs...)
+end
+
 function hessian(ab::AbstractBackend, f, xs...)
     if xs isa Tuple
         # only support computation of Hessian for functions with single input argument

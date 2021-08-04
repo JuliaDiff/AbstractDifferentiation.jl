@@ -141,6 +141,17 @@ const yvec = rand(5)
 xvec2 = deepcopy(xvec)
 yvec2 = deepcopy(yvec)
 
+function test_higher_order_backend(backends...)
+    ADbackends = AD.HigherOrderBackend(backends)
+    @test backends[end] == AD.lowest(ADbackends)
+    @test backends[end-1] == AD.secondlowest(ADbackends)
+    
+    for i in length(backends):-1:1
+        @test backends[i] == AD.lowest(ADbackends)
+        ADbackends = AD.reduceorder(ADbackends)       
+    end    
+    backends[1] == AD.reduceorder(ADbackends)
+end
 
 function test_derivatives(backend; multiple_inputs=true)
     # test with respect to analytical solution
@@ -480,6 +491,9 @@ function test_lazy_hessians(backend; multiple_inputs=true)
 end
 
 @testset "AbstractDifferentiation.jl" begin
+    @testset "Utils" begin
+        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend2)
+    end
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
             test_derivatives(fdm_backend1)
@@ -585,7 +599,11 @@ end
             test_jacobians(zygote_backend1)
         end
         @testset "Hessian" begin
-            test_hessians(zygote_backend1)
+            # Zygote over Zygote problems
+            backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
+            test_hessians(backends)
+            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            test_hessians(backends)
         end
         @testset "jvp" begin
             test_jvp(zygote_backend1)
@@ -603,7 +621,15 @@ end
             test_lazy_jacobians(zygote_backend1)
         end
         @testset "Lazy Hessian" begin
-            test_lazy_hessians(zygote_backend1)
+            # Zygote over Zygote problems
+            backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
+            test_lazy_hessians(backends)
+            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            test_lazy_hessians(backends)
         end
     end
 end
+
+
+backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
+test_hessians(backends)
