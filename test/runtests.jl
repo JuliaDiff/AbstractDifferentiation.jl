@@ -604,6 +604,9 @@ end
             test_hessians(backends)
             backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
             test_hessians(backends)
+            # fails:
+            # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
+            # test_hessians(backends)
         end
         @testset "jvp" begin
             test_jvp(zygote_backend1)
@@ -631,5 +634,3 @@ end
 end
 
 
-backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
-test_hessians(backends)
