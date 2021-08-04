@@ -107,15 +107,6 @@ AD.@primitive function pullback_function(ab::ZygoteBackend1, f, xs...)
 end
 ##
 
-struct ZygoteBackend <: AD.AbstractReverseMode end
-AD.@primitive function pullback_function(ab::ZygoteBackend, f, xs...)
-    return function (vs)
-        # Supports only single output and tuple as input
-        _, back = Zygote.pullback(f, xs...)
-        back(vs[1])
-    end
-end
-
 fder(x, y) = exp(y) * x + y * log(x)
 dfderdx(x, y) = exp(y) + y * 1/x
 dfderdy(x, y) = exp(y) * x + log(x)
@@ -616,4 +607,3 @@ end
         end
     end
 end
-

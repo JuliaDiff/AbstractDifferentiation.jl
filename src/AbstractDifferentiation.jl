@@ -47,10 +47,11 @@ function hessian(ab::AbstractBackend, f, xs...)
     if xs isa Tuple
         # only support computation of Hessian for functions with single input argument
         @assert length(xs) == 1
+        xs = xs[1]
     end
-    return jacobian(secondlowest(ab), (xs...,) -> begin
-        gradient(lowest(ab), f, xs...)
-    end, xs...)
+    return jacobian(secondlowest(ab), xs -> begin
+        gradient(lowest(ab), f, xs)[1] # gradient returns a tuple
+    end, xs)
 end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -92,7 +93,7 @@ function value_and_hessian(ab::AbstractBackend, f, xs...)
             value = primalvalue(ab, v, f, xs)
             primalcalled = true
         end
-        return g
+        return g[1] # gradient returns a tuple
     end, xs...)
     return value, hess
 end
@@ -105,7 +106,7 @@ function value_and_hessian(ab::HigherOrderBackend, f, xs...)
             value = primalvalue(ab, v, f, xs)
             primalcalled = true
         end
-        return g
+        return g[1]  # gradient returns a tuple
     end, xs...)
     return value, hess
 end
@@ -118,9 +119,9 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, xs...)
             value = primalvalue(secondlowest(ab), v, f, xs)
             primalcalled = true
         end
-        return g
+        return g[1] # gradient returns a tuple
     end, xs...)
-    return value, grads, hess
+    return value, (grads,) , hess
 end
 function value_gradient_and_hessian(ab::HigherOrderBackend, f, xs...)
     local value
@@ -131,9 +132,9 @@ function value_gradient_and_hessian(ab::HigherOrderBackend, f, xs...)
             value = primalvalue(secondlowest(ab), v, f, xs)
             primalcalled = true
         end
-        return g
+        return g[1] # gradient returns a tuple
     end, xs...)
-    return value, grads, hess
+    return value, (grads,) , hess
 end
 
 function pushforward_function(
@@ -244,7 +245,11 @@ function value_and_pullback_function(
                 value = primalvalue(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
-            return vs
+            if vs isa Tuple
+                return vs[1]
+            else
+                return vs
+            end
         end, xs...)(ws)
         return value, pb
     end
@@ -382,13 +387,18 @@ function Base.:*(d::LazyHessian, ys)
     end
 
     if d.xs isa Tuple
-        return pushforward_function(
+        res =  pushforward_function(
             secondlowest(d.backend),
-            (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)(ys)
+            (xs...,) -> gradient(lowest(d.backend), d.f, xs...)[1], d.xs...,)(ys)  # [1] because gradient returns a tuple
     else
-        return pushforward_function(
+        res =  pushforward_function(
             secondlowest(d.backend),
-            (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)(ys)
+            (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],d.xs,)(ys)  # gradient returns a tuple
+    end
+    if res isa Tuple
+        return res
+    else
+        return (res,)
     end
 end
 
