@@ -274,11 +274,7 @@ function value_and_pullback_function(
                 value = primalvalue(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
-            if vs isa Tuple
-                return vs[1]
-            else
-                return vs
-            end
+            return vs
         end, xs...)(ws)
         return value, pb
     end
