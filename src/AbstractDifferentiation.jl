@@ -51,15 +51,15 @@ function jacobian(ab::HigherOrderBackend, f, xs...)
     jacobian(lowest(ab), f, xs...)
 end
 
-function hessian(ab::AbstractBackend, f, xs...)
-    if xs isa Tuple
+function hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(xs) == 1
-        xs = xs[1]
+        @assert length(x) == 1
+        x = x[1]
     end
-    return jacobian(secondlowest(ab), xs -> begin
-        gradient(lowest(ab), f, xs)[1] # gradient returns a tuple
-    end, xs)
+    return jacobian(secondlowest(ab), x -> begin
+        gradient(lowest(ab), f, x)[1] # gradient returns a tuple
+    end, x)
 end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -88,61 +88,82 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
 
     return value, jacs
 end
-function value_and_hessian(ab::AbstractBackend, f, xs...)
+function value_and_hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
+
     local value
     primalcalled = false
     if ab isa AbstractFiniteDifference
-        value = primalvalue(ab, nothing, f, xs)
+        value = primalvalue(ab, nothing, f, (x,))
         primalcalled = true
     end
-    hess = jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    hess = jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, xs)
+            value = primalvalue(ab, v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
-    end, xs...)
+    end, x)
     return value, hess
 end
-function value_and_hessian(ab::HigherOrderBackend, f, xs...)
+function value_and_hessian(ab::HigherOrderBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    hess = jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    hess = jacobian(secondlowest(ab), (_x,) -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, xs)
+            value = primalvalue(ab, v, f, (x,))
             primalcalled = true
         end
         return g[1]  # gradient returns a tuple
-    end, xs...)
+    end, x)
     return value, hess
 end
-function value_gradient_and_hessian(ab::AbstractBackend, f, xs...)
+function value_gradient_and_hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, xs)
+            value = primalvalue(secondlowest(ab), v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
-    end, xs...)
-    return value, (grads,) , hess
+    end, x)
+    return value, (grads,), hess
 end
-function value_gradient_and_hessian(ab::HigherOrderBackend, f, xs...)
+function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, xs)
+            value = primalvalue(secondlowest(ab), v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
-    end, xs...)
-    return value, (grads,) , hess
+    end, x)
+    return value, (grads,), hess
 end
 
 function pushforward_function(
