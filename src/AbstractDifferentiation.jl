@@ -16,7 +16,11 @@ struct HigherOrderBackend{B} <: AbstractBackend
 end
 reduceorder(b::AbstractBackend) = b
 function reduceorder(b::HigherOrderBackend)
-    return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
+    if length(b.backends)==1 
+        return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
+    else
+        return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
+    end
 end
 lowest(b::AbstractBackend) = b
 lowest(b::HigherOrderBackend) = b.backends[end]
@@ -43,20 +47,19 @@ function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
-function hessian(ab::AbstractBackend, f, xs...)
-    xss = collect((xs...,)) 
-    counter = 0
-    # gradient returns tuple of gradient values with respect to inputs x,y ∈ xs
-    # Hessian is the Jacobian of the individual gradients, i.e., the tuple of matrices 
-    # defined by ∂x∂x f, ∂y∂y f, in the case of a scalar valued function `f`.  
-    hess = map((xs...,)) do x
-        counter += 1
-        _f = _x->f(setindex!(deepcopy(xss),_x,counter)...)
-        return jacobian(secondlowest(ab),(x,)-> begin
-            return gradient(lowest(ab), _f, x)
-            end, x)[1]
+function jacobian(ab::HigherOrderBackend, f, xs...) 
+    jacobian(lowest(ab), f, xs...)
+end
+
+function hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
     end
-    return hess
+    return jacobian(secondlowest(ab), x -> begin
+        gradient(lowest(ab), f, x)[1] # gradient returns a tuple
+    end, x)
 end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -85,61 +88,82 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
 
     return value, jacs
 end
-function value_and_hessian(ab::AbstractBackend, f, xs...)
+function value_and_hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
+
     local value
     primalcalled = false
     if ab isa AbstractFiniteDifference
-        value = primalvalue(ab, nothing, f, xs)
+        value = primalvalue(ab, nothing, f, (x,))
         primalcalled = true
     end
-    hess = jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    hess = jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, xs)
+            value = primalvalue(ab, v, f, (x,))
             primalcalled = true
         end
-        return g
-    end, xs...)
+        return g[1] # gradient returns a tuple
+    end, x)
     return value, hess
 end
-function value_and_hessian(ab::HigherOrderBackend, f, xs...)
+function value_and_hessian(ab::HigherOrderBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    hess = jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    hess = jacobian(secondlowest(ab), (_x,) -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, xs)
+            value = primalvalue(ab, v, f, (x,))
             primalcalled = true
         end
-        return g
-    end, xs...)
+        return g[1]  # gradient returns a tuple
+    end, x)
     return value, hess
 end
-function value_gradient_and_hessian(ab::AbstractBackend, f, xs...)
+function value_gradient_and_hessian(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, xs)
+            value = primalvalue(secondlowest(ab), v, f, (x,))
             primalcalled = true
         end
-        return g
-    end, xs...)
-    return value, grads, hess
+        return g[1] # gradient returns a tuple
+    end, x)
+    return value, (grads,), hess
 end
-function value_gradient_and_hessian(ab::HigherOrderBackend, f, xs...)
+function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        @assert length(x) == 1
+        x = x[1]
+    end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), (_xs...,) -> begin
-        v, g = value_and_gradient(lowest(ab), f, _xs...)
+    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+        v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, xs)
+            value = primalvalue(secondlowest(ab), v, f, (x,))
             primalcalled = true
         end
-        return g
-    end, xs...)
-    return value, grads, hess
+        return g[1] # gradient returns a tuple
+    end, x)
+    return value, (grads,), hess
 end
 
 function pushforward_function(
@@ -167,7 +191,10 @@ function value_and_pushforward_function(
     xs...,
 )
     return (ds) -> begin
-        @assert ds isa Tuple && length(ds) == length(xs)
+        if !(ds isa Tuple)
+            ds = (ds,)    
+        end
+        @assert length(ds) == length(xs)
         local value
         primalcalled = false
         if ab isa AbstractFiniteDifference
@@ -182,6 +209,7 @@ function value_and_pushforward_function(
             end
             return vs
         end, xs...)(ds)
+        
         return value, pf
     end
 end
@@ -267,10 +295,16 @@ function Base.:*(y, d::LazyDerivative)
 end
 
 function Base.:*(d::LazyDerivative, y::Union{Number,Tuple})
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     return derivative(d.backend, d.f, d.xs...) .* y
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyDerivative)
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     return y .* derivative(d.backend, d.f, d.xs...)
 end
 
@@ -292,6 +326,9 @@ Base.:*(d::LazyGradient, y) = gradient(d.backend, d.f, d.xs...) * y
 Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
 function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     if d.xs isa Tuple
         return gradient(d.backend, d.f, d.xs...) .* y
     else
@@ -300,6 +337,9 @@ function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
+    if y isa Tuple && d.xs isa Tuple
+        @assert length(y) == length(d.xs) 
+    end
     if d.xs isa Tuple
         return y .* gradient(d.backend, d.f, d.xs...)
     else
@@ -372,13 +412,18 @@ function Base.:*(d::LazyHessian, ys)
     end
 
     if d.xs isa Tuple
-        return pushforward_function(
+        res =  pushforward_function(
             secondlowest(d.backend),
-            (xs...,) -> gradient(lowest(d.backend), d.f, xs...), d.xs...,)(ys)
+            (xs...,) -> gradient(lowest(d.backend), d.f, xs...)[1], d.xs...,)(ys)  # [1] because gradient returns a tuple
     else
-        return pushforward_function(
+        res =  pushforward_function(
             secondlowest(d.backend),
-            (xs,) -> gradient(lowest(d.backend), d.f, xs),d.xs,)(ys)
+            (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],d.xs,)(ys)  # gradient returns a tuple
+    end
+    if res isa Tuple
+        return res
+    else
+        return (res,)
     end
 end
 
