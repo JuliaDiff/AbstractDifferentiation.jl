@@ -14,8 +14,8 @@ abstract type AbstractReverseMode <: AbstractBackend end
 struct HigherOrderBackend{B} <: AbstractBackend
     backends::B
 end
-reduceorder(b::AbstractBackend) = b
-function reduceorder(b::HigherOrderBackend)
+reduce_order(b::AbstractBackend) = b
+function reduce_order(b::HigherOrderBackend)
     if length(b.backends)==1 
         return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
     else
@@ -24,15 +24,15 @@ function reduceorder(b::HigherOrderBackend)
 end
 lowest(b::AbstractBackend) = b
 lowest(b::HigherOrderBackend) = b.backends[end]
-secondlowest(b::AbstractBackend) = b
-secondlowest(b::HigherOrderBackend) = lowest(reduceorder(b))
+second_lowest(b::AbstractBackend) = b
+second_lowest(b::HigherOrderBackend) = lowest(reduce_order(b))
 
 # If the primal value is in y, extract it.
 # Otherwise, re-compute it, e.g. in finite diff.
-primalvalue(::AbstractFiniteDifference, ::Any, f, xs) = f(xs...)
-primalvalue(::AbstractBackend, ys, ::Any, ::Any) = primalvalue(ys)
-primalvalue(x::Tuple) = map(primalvalue, x)
-primalvalue(x) = x
+primal_value(::AbstractFiniteDifference, ::Any, f, xs) = f(xs...)
+primal_value(::AbstractBackend, ys, ::Any, ::Any) = primal_value(ys)
+primal_value(x::Tuple) = map(primal_value, x)
+primal_value(x) = x
 
 function derivative(ab::AbstractBackend, f, xs::Number...)
     der = getindex.(jacobian(lowest(ab), f, xs...), 1)
@@ -57,7 +57,7 @@ function hessian(ab::AbstractBackend, f, x)
         @assert length(x) == 1
         x = x[1]
     end
-    return jacobian(secondlowest(ab), x -> begin
+    return jacobian(second_lowest(ab), x -> begin
         gradient(lowest(ab), f, x)[1] # gradient returns a tuple
     end, x)
 end
@@ -74,13 +74,13 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
     primalcalled = false
     if lowest(ab) isa AbstractFiniteDifference
-        value = primalvalue(ab, nothing, f, xs)
+        value = primal_value(ab, nothing, f, xs)
         primalcalled = true
     end
     jacs = jacobian(lowest(ab), (_xs...,) -> begin
         v = f(_xs...)
         if !primalcalled
-            value = primalvalue(ab, v, f, xs)
+            value = primal_value(ab, v, f, xs)
             primalcalled = true
         end
         return v
@@ -98,13 +98,13 @@ function value_and_hessian(ab::AbstractBackend, f, x)
     local value
     primalcalled = false
     if ab isa AbstractFiniteDifference
-        value = primalvalue(ab, nothing, f, (x,))
+        value = primal_value(ab, nothing, f, (x,))
         primalcalled = true
     end
-    hess = jacobian(secondlowest(ab), _x -> begin
+    hess = jacobian(second_lowest(ab), _x -> begin
         v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, (x,))
+            value = primal_value(ab, v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
@@ -119,10 +119,10 @@ function value_and_hessian(ab::HigherOrderBackend, f, x)
     end
     local value
     primalcalled = false
-    hess = jacobian(secondlowest(ab), (_x,) -> begin
+    hess = jacobian(second_lowest(ab), (_x,) -> begin
         v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(ab, v, f, (x,))
+            value = primal_value(ab, v, f, (x,))
             primalcalled = true
         end
         return g[1]  # gradient returns a tuple
@@ -137,10 +137,10 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+    grads, hess = value_and_jacobian(second_lowest(ab), _x -> begin
         v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, (x,))
+            value = primal_value(second_lowest(ab), v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
@@ -155,10 +155,10 @@ function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     end
     local value
     primalcalled = false
-    grads, hess = value_and_jacobian(secondlowest(ab), _x -> begin
+    grads, hess = value_and_jacobian(second_lowest(ab), _x -> begin
         v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
-            value = primalvalue(secondlowest(ab), v, f, (x,))
+            value = primal_value(second_lowest(ab), v, f, (x,))
             primalcalled = true
         end
         return g[1] # gradient returns a tuple
@@ -198,13 +198,13 @@ function value_and_pushforward_function(
         local value
         primalcalled = false
         if ab isa AbstractFiniteDifference
-            value = primalvalue(ab, nothing, f, xs)
+            value = primal_value(ab, nothing, f, xs)
             primalcalled = true
         end
         pf = pushforward_function(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
-                value = primalvalue(lowest(ab), vs, f, xs)
+                value = primal_value(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
             return vs
@@ -257,13 +257,13 @@ function value_and_pullback_function(
         local value
         primalcalled = false
         if ab isa AbstractFiniteDifference
-            value = primalvalue(ab, nothing, f, xs)
+            value = primal_value(ab, nothing, f, xs)
             primalcalled = true
         end
         if ws === nothing
             vs = f(xs...)
             if !primalcalled
-                value = primalvalue(lowest(ab), vs, f, xs)
+                value = primal_value(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
             return value, nothing
@@ -271,7 +271,7 @@ function value_and_pullback_function(
         pb = pullback_function(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
-                value = primalvalue(lowest(ab), vs, f, xs)
+                value = primal_value(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
             return vs
@@ -413,11 +413,11 @@ function Base.:*(d::LazyHessian, ys)
 
     if d.xs isa Tuple
         res =  pushforward_function(
-            secondlowest(d.backend),
+            second_lowest(d.backend),
             (xs...,) -> gradient(lowest(d.backend), d.f, xs...)[1], d.xs...,)(ys)  # [1] because gradient returns a tuple
     else
         res =  pushforward_function(
-            secondlowest(d.backend),
+            second_lowest(d.backend),
             (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],d.xs,)(ys)  # gradient returns a tuple
     end
     if res isa Tuple
@@ -435,13 +435,13 @@ function Base.:*(ys, d::LazyHessian)
     end
     if d.xs isa Tuple
         return pullback_function(
-            secondlowest(d.backend),
+            second_lowest(d.backend),
             (xs...,) -> gradient(lowest(d.backend), d.f, xs...),
             d.xs...,
             )(ya)
     else
         return pullback_function(
-            secondlowest(d.backend),
+            second_lowest(d.backend),
             (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],
             d.xs,
             )(ya)
@@ -465,16 +465,16 @@ function Base.:*(ys::Number, d::LazyHessian)
 end
 
 
-function lazyderivative(ab::AbstractBackend, f, xs::Number...)
+function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
     return LazyDerivative(ab, f, xs)
 end
-function lazygradient(ab::AbstractBackend, f, xs...)
+function lazy_gradient(ab::AbstractBackend, f, xs...)
     return LazyGradient(ab, f, xs)
 end
-function lazyhessian(ab::AbstractBackend, f, xs...)
+function lazy_hessian(ab::AbstractBackend, f, xs...)
     return LazyHessian(ab, f, xs)
 end
-function lazyjacobian(ab::AbstractBackend, f, xs...)
+function lazy_jacobian(ab::AbstractBackend, f, xs...)
     return LazyJacobian(ab, f, xs)
 end
 
@@ -486,7 +486,7 @@ D(b::AbstractBackend, d::D) = H(HigherOrderBackend((b, d.b)), d.f)
 D(d::D) = H(HigherOrderBackend((d.backend, d.backend)), d.f)
 function (d::D)(xs...; lazy = true)
     if lazy
-        return lazyjacobian(d.ab, d.f, xs...)
+        return lazy_jacobian(d.ab, d.f, xs...)
     else
         return jacobian(d.ab, d.f, xs...)
     end
@@ -498,7 +498,7 @@ struct H{B, F}
 end
 function (h::H)(xs...; lazy = true)
     if lazy
-        return lazyhessian(h.ab, h.f, xs...)
+        return lazy_hessian(h.ab, h.f, xs...)
     else
         return hessian(h.ab, h.f, xs...)
     end
@@ -513,8 +513,8 @@ macro primitive(expr)
         return define_pullback_function_and_friends(fdef) |> esc
     elseif name == :jacobian
         return define_jacobian_and_friends(fdef) |> esc
-    elseif name == :primalvalue
-        return define_primalvalue(fdef) |> esc
+    elseif name == :primal_value
+        return define_primal_value(fdef) |> esc
     else
         throw("Unsupported AD primitive.")
     end
@@ -594,8 +594,8 @@ function define_jacobian_and_friends(fdef)
     return ExprTools.combinedef(fdef)
 end
 
-function define_primalvalue(fdef)
-    fdef[:name] = :(AbstractDifferentiation.primalvalue)
+function define_primal_value(fdef)
+    fdef[:name] = :(AbstractDifferentiation.primal_value)
     return ExprTools.combinedef(fdef)
 end
 
