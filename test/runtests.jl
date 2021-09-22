@@ -68,7 +68,7 @@ AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
         error(typeof(xs)) 
     end
 end
-AD.primalvalue(::ForwardDiffBackend1, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
+AD.primal_value(::ForwardDiffBackend1, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
 
 struct ForwardDiffBackend2 <: AD.AbstractForwardMode end
 const forwarddiff_backend2 = ForwardDiffBackend2()
@@ -87,7 +87,7 @@ AD.@primitive function pushforward_function(ab::ForwardDiffBackend2, f, xs...)
         end
     end
 end
-AD.primalvalue(::ForwardDiffBackend2, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
+AD.primal_value(::ForwardDiffBackend2, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
 ##
 
 ## Zygote
@@ -144,13 +144,13 @@ yvec2 = deepcopy(yvec)
 function test_higher_order_backend(backends...)
     ADbackends = AD.HigherOrderBackend(backends)
     @test backends[end] == AD.lowest(ADbackends)
-    @test backends[end-1] == AD.secondlowest(ADbackends)
+    @test backends[end-1] == AD.second_lowest(ADbackends)
     
     for i in length(backends):-1:1
         @test backends[i] == AD.lowest(ADbackends)
-        ADbackends = AD.reduceorder(ADbackends)       
+        ADbackends = AD.reduce_order(ADbackends)       
     end    
-    backends[1] == AD.reduceorder(ADbackends)
+    backends[1] == AD.reduce_order(ADbackends)
 end
 
 function test_derivatives(backend; multiple_inputs=true)
