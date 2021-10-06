@@ -10,6 +10,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
 ExprTools = "0.1"
+ForwardDiff = "0.10"
 Requires = "0.5, 1"
 julia = "1"
 
