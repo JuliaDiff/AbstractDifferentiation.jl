@@ -1,6 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools
+using LinearAlgebra, ExprTools, Requires
 
 export AD
 
