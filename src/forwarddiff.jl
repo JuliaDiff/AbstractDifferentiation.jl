@@ -18,7 +18,7 @@ function pushforward_function(::ForwardDiffBackend, f, x)
     end
 end
 
-primal_value(::ForwardDiffBackend, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
+primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 
 # these implementations are more efficient than the fallbacks
 
