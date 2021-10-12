@@ -1,5 +1,8 @@
 # AbstractDifferentiation
 
+[![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions?query=workflow%3ACI)
+[![Coverage](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl)
+
 ## Motivation
 
 This is a package that implements an abstract interface for differentiation in Julia. This is particularly useful for implementing abstract algorithms requiring derivatives, gradients, jacobians, Hessians or multiple of those without depending on specific automatic differentiation packages' user interfaces.
