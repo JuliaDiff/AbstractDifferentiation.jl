@@ -25,7 +25,12 @@ primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 gradient(::ForwardDiffBackend, f, x::AbstractArray) = (ForwardDiff.gradient(f, x),)
 
 function jacobian(ba::ForwardDiffBackend, f, x::AbstractArray)
-    return value_and_jacobian(ba, f, x)[2]
+    y = f(x)
+    if y isa Number
+        return (adjoint(ForwardDiff.gradient(f, x)),)
+    else
+        return (ForwardDiff.jacobian(f, x),)
+    end
 end
 jacobian(::ForwardDiffBackend, f, x::Number) = (ForwardDiff.derivative(f, x),)
 
@@ -36,36 +41,9 @@ function value_and_gradient(::ForwardDiffBackend, f, x::AbstractArray)
     return DiffResults.value(result), (DiffResults.derivative(result),)
 end
 
-function value_and_jacobian(::ForwardDiffBackend, f, xs::AbstractArray)
-    y = f(xs)
-    if y isa Number
-        return y, (adjoint(ForwardDiff.gradient(f, xs)),)
-    else
-        return y, (ForwardDiff.jacobian(f, xs),)
-    end
-end
-function value_and_jacobian(::ForwardDiffBackend, f, x::Number)
-    result = ForwardDiff.derivative!(DiffResults.DiffResult(x, x), f, x)
-    return DiffResults.value(result), (DiffResults.derivative(result),)
-end
-function value_and_jacobian(::ForwardDiffBackend, f, xs::Number...)
-    xs_vec = StaticArrays.SVector(xs...)
-    result = ForwardDiff.gradient!(DiffResults.GradientResult(xs_vec), xs -> f(xs...), xs_vec)
-    return DiffResults.value(result), Tuple(DiffResults.derivative(result))
-end
-
 function value_and_hessian(::ForwardDiffBackend, f, x)
     result = ForwardDiff.hessian!(DiffResults.HessianResult(x), f, x)
     return DiffResults.value(result), (DiffResults.hessian(result),)
-end
-
-function value_gradient_and_hessian(::ForwardDiffBackend, f, x)
-    result = ForwardDiff.hessian!(DiffResults.HessianResult(x), f, x)
-    return (
-        DiffResults.value(result),
-        (DiffResults.gradient(result),),
-        (DiffResults.hessian(result),),
-    )
 end
 
 @inline step_toward(x::Number, v::Number, h) = x + h * v
