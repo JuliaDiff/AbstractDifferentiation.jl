@@ -27,7 +27,7 @@ gradient(::ForwardDiffBackend, f, x::AbstractArray) = (ForwardDiff.gradient(f, x
 function jacobian(ba::ForwardDiffBackend, f, x::AbstractArray)
     y = f(x)
     if y isa Number
-        return (adjoint(ForwardDiff.gradient(f, x)),)
+        return (ForwardDiff.jacobian(Base.vect ∘ f, x),)
     else
         return (ForwardDiff.jacobian(f, x),)
     end
