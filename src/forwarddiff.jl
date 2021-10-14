@@ -13,7 +13,7 @@ function pushforward_function(::ForwardDiffBackend, f, x)
             @assert length(v) == 1
             return (ForwardDiff.derivative(h -> f(step_toward(x, v[1], h)), 0),)
         else
-            return (ForwardDiffFD.derivative(h -> f(step_toward(x, v, h)), 0),)
+            return (ForwardDiff.derivative(h -> f(step_toward(x, v, h)), 0),)
         end
     end
 end
