@@ -4,16 +4,11 @@ struct ForwardDiffBackend <: AbstractBackend end
 
 @primitive function pushforward_function(ba::ForwardDiffBackend, f, xs...)
     return function pushforward(vs)
-        return ForwardDiff.derivative(h -> f(step_toward.(xs, vs, h)...), 0)
-    end
-end
-function pushforward_function(::ForwardDiffBackend, f, x)
-    return function pushforward(v)
-        if v isa Tuple
-            @assert length(v) == 1
-            return (ForwardDiff.derivative(h -> f(step_toward(x, v[1], h)), 0),)
+        if length(xs) == 1
+            v = vs isa Tuple ? only(vs) : vs
+            return (ForwardDiff.derivative(h -> f(step_toward(xs[1], v, h)), 0),)
         else
-            return (ForwardDiff.derivative(h -> f(step_toward(x, v, h)), 0),)
+            return ForwardDiff.derivative(h -> f(step_toward.(xs, vs, h)...), 0)
         end
     end
 end
