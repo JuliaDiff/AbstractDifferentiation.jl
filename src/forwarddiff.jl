@@ -20,12 +20,7 @@ primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 gradient(::ForwardDiffBackend, f, x::AbstractArray) = (ForwardDiff.gradient(f, x),)
 
 function jacobian(ba::ForwardDiffBackend, f, x::AbstractArray)
-    y = f(x)
-    if y isa Number
-        return (ForwardDiff.jacobian(Base.vect ∘ f, x),)
-    else
-        return (ForwardDiff.jacobian(f, x),)
-    end
+    return (ForwardDiff.jacobian(asarray ∘ f, x),)
 end
 jacobian(::ForwardDiffBackend, f, x::Number) = (ForwardDiff.derivative(f, x),)
 
@@ -44,3 +39,6 @@ end
 @inline step_toward(x::Number, v::Number, h) = x + h * v
 # support arrays and tuples
 @noinline step_toward(x, v, h) = x .+ h .* v
+
+@inline asarray(x) = [x]
+@inline asarray(x::AbstractArray) = x
