@@ -1,6 +1,7 @@
 using AbstractDifferentiation
 using Test, FiniteDifferences, LinearAlgebra
 using ForwardDiff
+using AbstractDifferentiation: ForwardDiffBackend
 using Zygote
 using Random
 Random.seed!(1234)
@@ -50,6 +51,7 @@ end
 
 
 ## ForwardDiff
+const forwarddiff_backend = ForwardDiffBackend()
 struct ForwardDiffBackend1 <: AD.AbstractForwardMode end
 const forwarddiff_backend1 = ForwardDiffBackend1()
 AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
@@ -254,7 +256,7 @@ function test_jvp(backend; multiple_inputs=true)
     v = (rand(length(xvec)), rand(length(yvec)))
 
     if multiple_inputs
-        if backend isa Union{FDMBackend2,ForwardDiffBackend2} # augmented version of v
+        if backend isa Union{FDMBackend2,ForwardDiffBackend,ForwardDiffBackend2} # augmented version of v
             identity_like = AD.identity_matrix_like(v)
             vaug = map(identity_like) do identity_like_i
                 identity_like_i .* v
@@ -445,7 +447,7 @@ function test_lazy_jacobians(backend; multiple_inputs=true)
         # jvp
         pf1 = (jxvp(xvec,yvec,v[1]), jyvp(xvec,yvec,v[2]))
 
-        if backend isa Union{FDMBackend2,ForwardDiffBackend2} # augmented version of v
+        if backend isa Union{FDMBackend2,ForwardDiffBackend,ForwardDiffBackend2} # augmented version of v
             identity_like = AD.identity_matrix_like(v)
             vaug = map(identity_like) do identity_like_i
                 identity_like_i .* v
@@ -493,7 +495,7 @@ end
 
 @testset "AbstractDifferentiation.jl" begin
     @testset "Utils" begin
-        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend2)
+        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend, forwarddiff_backend2)
     end
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -549,42 +551,52 @@ end
     end
     @testset "ForwardDiff" begin
         @testset "Derivative" begin
+            test_derivatives(forwarddiff_backend)
             test_derivatives(forwarddiff_backend1; multiple_inputs=false)
             test_derivatives(forwarddiff_backend2)
         end
         @testset "Gradient" begin
+            test_gradients(forwarddiff_backend)
             test_gradients(forwarddiff_backend1; multiple_inputs=false)
             test_gradients(forwarddiff_backend2)
         end
         @testset "Jacobian" begin
+            test_jacobians(forwarddiff_backend)
             test_jacobians(forwarddiff_backend1; multiple_inputs=false)
             test_jacobians(forwarddiff_backend2)
         end
         @testset "Hessian" begin
+            test_hessians(forwarddiff_backend)
             test_hessians(forwarddiff_backend1; multiple_inputs=false)
             test_hessians(forwarddiff_backend2)
         end
         @testset "jvp" begin
+            test_jvp(forwarddiff_backend)
             test_jvp(forwarddiff_backend1; multiple_inputs=false)
             test_jvp(forwarddiff_backend2)
         end
         @testset "j′vp" begin
+            test_j′vp(forwarddiff_backend)
             test_j′vp(forwarddiff_backend1; multiple_inputs=false)
             test_j′vp(forwarddiff_backend2)
         end
         @testset "Lazy Derivative" begin
+            test_lazy_derivatives(forwarddiff_backend)
             test_lazy_derivatives(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_derivatives(forwarddiff_backend2)
         end
         @testset "Lazy Gradient" begin
+            test_lazy_gradients(forwarddiff_backend)
             test_lazy_gradients(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_gradients(forwarddiff_backend2)
         end
         @testset "Lazy Jacobian" begin
+            test_lazy_jacobians(forwarddiff_backend)
             test_lazy_jacobians(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_jacobians(forwarddiff_backend2)
         end
         @testset "Lazy Hessian" begin
+            test_lazy_hessians(forwarddiff_backend)
             test_lazy_hessians(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_hessians(forwarddiff_backend2)
         end
@@ -601,8 +613,12 @@ end
         end
         @testset "Hessian" begin
             # Zygote over Zygote problems
+            backends = AD.HigherOrderBackend((forwarddiff_backend,zygote_backend1))
+            test_hessians(backends)
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_hessians(backends)
+            # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
+            # test_hessians(backends)
             backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
             test_hessians(backends)
             # fails:
@@ -626,8 +642,12 @@ end
         end
         @testset "Lazy Hessian" begin
             # Zygote over Zygote problems
+            backends = AD.HigherOrderBackend((forwarddiff_backend,zygote_backend1))
+            test_lazy_hessians(backends)
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_lazy_hessians(backends)
+            # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
+            # test_lazy_hessians(backends)
             backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
             test_lazy_hessians(backends)
         end

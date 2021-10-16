@@ -1,6 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools
+using LinearAlgebra, ExprTools, Requires
 
 export AD
 
@@ -626,6 +626,10 @@ zero_matrix_like(x::AbstractVector) = (zero(similar(x, length(x), length(x))),)
 zero_matrix_like(x::Number) = (zero(x),)
 function zero_matrix_like(x)
     throw("The function `zero_matrix_like` is not defined for the type $(typeof(x)).")
+end
+
+function __init__()
+    @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("forwarddiff.jl")
 end
 
 end
