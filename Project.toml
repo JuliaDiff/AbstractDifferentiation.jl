@@ -1,7 +1,7 @@
 name = "AbstractDifferentiation"
 uuid = "c29ec348-61ec-40c8-8164-b8c60e9d9f3d"
 authors = ["Mohamed Tarek <mohamed82008@gmail.com> and contributors"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
