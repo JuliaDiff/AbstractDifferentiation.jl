@@ -1,6 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools, Requires
+using LinearAlgebra, ExprTools, Requires, Compat
 
 export AD
 
@@ -526,9 +526,15 @@ function define_pushforward_function_and_friends(fdef)
             pff = AbstractDifferentiation.pushforward_function($(args...),)
             if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix, Number}}}
                 return map(identity_like) do identity_like_i
+                    if VERSION < v"1.3"
+                        return reduce(hcat, map(AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                            pff(cols)
+                        end)
+                    else
                     return mapreduce(hcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
                         pff(cols)
                     end
+                end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
@@ -563,8 +569,14 @@ function define_pullback_function_and_friends(fdef)
             identity_like = AbstractDifferentiation.identity_matrix_like(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
+                    if VERSION < v"1.3"
+                        return reduce(vcat, map(AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                            value_and_pbf(cols)[2]'
+                        end)
+                    else
                     return mapreduce(vcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
                         value_and_pbf(cols)[2]'
+                        end
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
