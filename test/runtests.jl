@@ -122,7 +122,13 @@ dfgraddydy(x, y) = zeros(length(y),length(y))
 function fjac(x, y)
     x + -3*y + [y[2:end];zero(y[end])]/2# Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U) * y
 end
-dfjacdx(x, y) = I(length(x))
+function dfjacdx(x, y)
+    if VERSION < v"1.3"
+        return Matrix{Float64}(I, length(x), length(x))
+    else
+        return I(length(x))
+    end
+end
 dfjacdy(x, y) = Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U)
 
 # Jvp
@@ -617,10 +623,12 @@ end
             test_hessians(backends)
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_hessians(backends)
-            # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
-            # test_hessians(backends)
-            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
-            test_hessians(backends)
+            if VERSION >= v"1.3"
+                # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
+                # test_hessians(backends)
+                backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+                test_hessians(backends)
+            end
             # fails:
             # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
             # test_hessians(backends)
@@ -646,12 +654,12 @@ end
             test_lazy_hessians(backends)
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_lazy_hessians(backends)
-            # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
-            # test_lazy_hessians(backends)
-            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
-            test_lazy_hessians(backends)
+            if VERSION >= v"1.3"
+                # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend))
+                # test_lazy_hessians(backends)
+                backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+                test_lazy_hessians(backends)
+            end
         end
     end
 end
-
-
