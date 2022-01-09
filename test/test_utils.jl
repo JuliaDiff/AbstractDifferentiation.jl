@@ -182,10 +182,6 @@ function test_jvp(backend; multiple_inputs=true, vaugmented=false)
     valvec1, pf1 = AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)(v[1])
     valvec2, pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)(v[2])
 
-    # NOTE: added for compatibility with FDMBackend2. Why is this needed?
-    pf1 = pf1 isa Tuple ? pf1 : (pf1,)
-    pf2 = pf2 isa Tuple ? pf2 : (pf2,)
-
     @test valvec1 == fjac(xvec, yvec)
     @test valvec2 == fjac(xvec, yvec)
     @test minimum(isapprox.((pf1[1],pf2[1]), (jxvp(xvec,yvec,v[1]), jyvp(xvec,yvec,v[2])), atol=1e-10))
