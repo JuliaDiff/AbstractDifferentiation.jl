@@ -640,6 +640,9 @@ function zero_matrix_like(x)
     throw("The function `zero_matrix_like` is not defined for the type $(typeof(x)).")
 end
 
+@inline asarray(x) = [x]
+@inline asarray(x::AbstractArray) = x
+
 function __init__()
     @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("forwarddiff.jl")
 end

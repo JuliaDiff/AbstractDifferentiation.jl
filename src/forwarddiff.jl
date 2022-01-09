@@ -39,6 +39,3 @@ end
 @inline step_toward(x::Number, v::Number, h) = x + h * v
 # support arrays and tuples
 @noinline step_toward(x, v, h) = x .+ h .* v
-
-@inline asarray(x) = [x]
-@inline asarray(x::AbstractArray) = x
