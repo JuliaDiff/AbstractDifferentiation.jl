@@ -33,11 +33,23 @@ jyvp(x,y,v) = dfjacdy(x,y)*v
 vJxp(x,y,v) = dfjacdx(x,y)'*v
 vJyp(x,y,v) = dfjacdy(x,y)'*v
 
-const xscalar = rand()
-const yscalar = rand()
+const xscalar = 0.32597672886359486
+const yscalar = 0.5490511363155669
 
-const xvec = rand(5)
-const yvec = rand(5)
+const xvec = [
+    0.21858665481883066
+    0.8942454282009883
+    0.35311164439921205
+    0.39425536741585077
+    0.9531246272848422   
+]
+const yvec = [
+    0.7955469475347194
+    0.4942498668904206
+    0.7484150218874741
+    0.5782319465613976
+    0.7279350012266056   
+]
 
 # to check if vectors get mutated
 xvec2 = deepcopy(xvec)
