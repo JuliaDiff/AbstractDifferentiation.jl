@@ -1,6 +1,8 @@
 using AbstractDifferentiation
 using Test
 using FiniteDifferences, ForwardDiff, Zygote
+using Random
+Random.seed!(1234)
 
 include("test_utils.jl")
 
