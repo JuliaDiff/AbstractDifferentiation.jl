@@ -51,7 +51,8 @@ end
 
 
 ## ForwardDiff
-const forwarddiff_backend = ForwardDiffBackend()
+const forwarddiff_backend = @inferred(ForwardDiffBackend())
+const forwarddiff_backend_chunk = @inferred(ForwardDiffBackend(; chunksize=Val{1}()))
 struct ForwardDiffBackend1 <: AD.AbstractForwardMode end
 const forwarddiff_backend1 = ForwardDiffBackend1()
 AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
@@ -501,7 +502,7 @@ end
 
 @testset "AbstractDifferentiation.jl" begin
     @testset "Utils" begin
-        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend, forwarddiff_backend2)
+        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend, forwarddiff_backend_chunk, forwarddiff_backend2)
     end
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -558,51 +559,61 @@ end
     @testset "ForwardDiff" begin
         @testset "Derivative" begin
             test_derivatives(forwarddiff_backend)
+            test_derivatives(forwarddiff_backend_chunk)
             test_derivatives(forwarddiff_backend1; multiple_inputs=false)
             test_derivatives(forwarddiff_backend2)
         end
         @testset "Gradient" begin
             test_gradients(forwarddiff_backend)
+            test_gradients(forwarddiff_backend_chunk)
             test_gradients(forwarddiff_backend1; multiple_inputs=false)
             test_gradients(forwarddiff_backend2)
         end
         @testset "Jacobian" begin
             test_jacobians(forwarddiff_backend)
+            test_jacobians(forwarddiff_backend_chunk)
             test_jacobians(forwarddiff_backend1; multiple_inputs=false)
             test_jacobians(forwarddiff_backend2)
         end
         @testset "Hessian" begin
             test_hessians(forwarddiff_backend)
+            test_hessians(forwarddiff_backend_chunk)
             test_hessians(forwarddiff_backend1; multiple_inputs=false)
             test_hessians(forwarddiff_backend2)
         end
         @testset "jvp" begin
             test_jvp(forwarddiff_backend)
+            test_jvp(forwarddiff_backend_chunk)
             test_jvp(forwarddiff_backend1; multiple_inputs=false)
             test_jvp(forwarddiff_backend2)
         end
         @testset "j′vp" begin
             test_j′vp(forwarddiff_backend)
+            test_j′vp(forwarddiff_backend_chunk)
             test_j′vp(forwarddiff_backend1; multiple_inputs=false)
             test_j′vp(forwarddiff_backend2)
         end
         @testset "Lazy Derivative" begin
             test_lazy_derivatives(forwarddiff_backend)
+            test_lazy_derivatives(forwarddiff_backend_chunk)
             test_lazy_derivatives(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_derivatives(forwarddiff_backend2)
         end
         @testset "Lazy Gradient" begin
             test_lazy_gradients(forwarddiff_backend)
+            test_lazy_gradients(forwarddiff_backend_chunk)
             test_lazy_gradients(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_gradients(forwarddiff_backend2)
         end
         @testset "Lazy Jacobian" begin
             test_lazy_jacobians(forwarddiff_backend)
+            test_lazy_jacobians(forwarddiff_backend_chunk)
             test_lazy_jacobians(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_jacobians(forwarddiff_backend2)
         end
         @testset "Lazy Hessian" begin
             test_lazy_hessians(forwarddiff_backend)
+            test_lazy_hessians(forwarddiff_backend_chunk)
             test_lazy_hessians(forwarddiff_backend1; multiple_inputs=false)
             test_lazy_hessians(forwarddiff_backend2)
         end
