@@ -164,8 +164,8 @@ function test_hessians(backend; multiple_inputs=false)
     @test minimum(isapprox.(hess4, hess1, atol=1e-10))
 end
 
-function test_jvp(backend; multiple_inputs=true, vaugmented=false)
-    v = (rand(length(xvec)), rand(length(yvec)))
+function test_jvp(backend; multiple_inputs=true, vaugmented=false, rng=Random.GLOBAL_RNG)
+    v = (rand(rng, length(xvec)), rand(rng, length(yvec)))
 
     if multiple_inputs
         if vaugmented
@@ -199,9 +199,9 @@ function test_jvp(backend; multiple_inputs=true, vaugmented=false)
     @test minimum(isapprox.((pf1[1],pf2[1]), (jxvp(xvec,yvec,v[1]), jyvp(xvec,yvec,v[2])), atol=1e-10))
 end
 
-function test_j′vp(backend; multiple_inputs=true)
+function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG)
     # test with respect to analytical solution
-    w = rand(length(fjac(xvec, yvec)))
+    w = rand(rng, length(fjac(xvec, yvec)))
     if multiple_inputs
         pb1 = AD.pullback_function(backend, fjac, xvec, yvec)(w)
         valvec, pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)(w)
@@ -307,7 +307,12 @@ function test_lazy_gradients(backend; multiple_inputs=true)
     end
 end
 
-function test_lazy_jacobians(backend; multiple_inputs=true, vaugmented=false)
+function test_lazy_jacobians(
+    backend;
+    multiple_inputs=true,
+    vaugmented=false,
+    rng=Random.GLOBAL_RNG,
+)
     # single input function
     jac1 = AD.jacobian(backend, x->fjac(x, yvec), xvec)
     lazyjac = AD.LazyJacobian(backend, x->fjac(x, yvec), xvec)
@@ -319,8 +324,8 @@ function test_lazy_jacobians(backend; multiple_inputs=true, vaugmented=false)
     @test norm.(yscalar*lazyjac .- yscalar.*jac1) == (0,)
     @test yscalar*lazyjac isa Tuple
 
-    w = rand(length(fjac(xvec, yvec)))
-    v = (rand(length(xvec)),rand(length(xvec)))
+    w = rand(rng, length(fjac(xvec, yvec)))
+    v = (rand(rng, length(xvec)), rand(rng, length(xvec)))
 
     # vjp
     pb1 = (vJxp(xvec,yvec,w),)
@@ -370,7 +375,7 @@ function test_lazy_jacobians(backend; multiple_inputs=true, vaugmented=false)
     end
 end
 
-function test_lazy_hessians(backend; multiple_inputs=true)
+function test_lazy_hessians(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG)
     # fdm_backend not used here yet..
     # single input function
     fhess = x -> fgrad(x, yvec)
@@ -385,8 +390,8 @@ function test_lazy_hessians(backend; multiple_inputs=true)
     @test minimum(isapprox.(yscalar*lazyhess, yscalar.*hess1, atol=1e-10))
     @test yscalar*lazyhess isa Tuple
 
-    w = rand(length(xvec))
-    v = rand(length(xvec))
+    w = rand(rng, length(xvec))
+    v = rand(rng, length(xvec))
 
     # Hvp
     Hv = map(h->h*v, hess1)
