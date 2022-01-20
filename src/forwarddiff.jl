@@ -1,9 +1,31 @@
 using .ForwardDiff: ForwardDiff, DiffResults, StaticArrays
 
-struct ForwardDiffBackend{CS} <: AbstractBackend
-    ForwardDiffBackend{CS}() where {CS} = new{CS}()
+"""
+    ForwardDiffBackend{CS}
+
+AD backend that uses forward mode with ForwardDiff.jl.
+
+The type parameter `CS` denotes the chunk size of the differentiation algorithm. If it is
+`Nothing`, then ForwardiffDiff uses a heuristic to set the chunk size based on the input.
+
+See also: [ForwardDiff.jl: Configuring Chunk Size](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Configuring-Chunk-Size)
+"""
+struct ForwardDiffBackend{CS} <: AbstractBackend end
+
+"""
+    ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
+
+Create an AD backend that uses forward mode with ForwardDiff.jl.
+
+If the `chunksize` of the differentiation algorithm is set to `nothing` (the default), then
+ForwarddDiff uses a heuristic to set the chunk size based on the input. Alternatively, if
+`chunksize=Val{N}()`, then the chunk size is set to `N`.
+
+See also: [ForwardDiff.jl: Configuring Chunk Size](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Configuring-Chunk-Size)
+"""
+function ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
+    return ForwardDiffBackend{getchunksize(chunksize)}()
 end
-ForwardDiffBackend(; chunksize=nothing) = ForwardDiffBackend{getchunksize(chunksize)}()
 
 @primitive function pushforward_function(ba::ForwardDiffBackend, f, xs...)
     return function pushforward(vs)
@@ -57,7 +79,7 @@ end
 @inline asarray(x) = [x]
 @inline asarray(x::AbstractArray) = x
 
-getchunksize(_) = Nothing
+getchunksize(::Nothing) = Nothing
 getchunksize(::Val{N}) where {N} = N
 
 chunk(::ForwardDiffBackend{Nothing}, x) = ForwardDiff.Chunk(x)
