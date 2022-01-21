@@ -1,8 +1,6 @@
 using AbstractDifferentiation
 using Test
 using ForwardDiff
-using Random
-Random.seed!(1234)
 
 include("test_utils.jl")
 

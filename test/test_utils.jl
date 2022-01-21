@@ -1,6 +1,7 @@
 using AbstractDifferentiation
 using Test, LinearAlgebra
 using Random
+Random.seed!(1234)
 
 fder(x, y) = exp(y) * x + y * log(x)
 dfderdx(x, y) = exp(y) + y * 1/x
