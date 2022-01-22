@@ -22,6 +22,8 @@ FiniteDifferencesBackend() = FiniteDifferencesBackend(FiniteDifferences.central_
     return FiniteDifferences.jacobian(ba.method, f, xs...)
 end
 
+derivative(ba::FiniteDifferencesBackend, f, x::Number) = ba.method(f, x)
+
 function pushforward_function(ba::FiniteDifferencesBackend, f, xs...)
     return function pushforward(vs)
         ws = FiniteDifferences.jvp(ba.method, f, tuple.(xs, vs)...)
