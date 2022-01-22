@@ -32,14 +32,16 @@ struct FDMBackend3{A} <: AD.AbstractFiniteDifference
 end
 FDMBackend3() = FDMBackend3(central_fdm(5, 1))
 const fdm_backend3 = FDMBackend3()
-AD.@primitive function pullback_function(ab::FDMBackend3, f, xs...)
+AD.@primitive function value_and_pullback_function(ab::FDMBackend3, f, xs...)
     return function (vs)
-        # Supports only single output
-        if vs isa AbstractVector
-            return FDM.j′vp(ab.alg, f, vs, xs...)
+        value = f(xs...)
+        if vs === nothing
+            return value, nothing
+        elseif vs isa AbstractVector # Supports only single output
+            return value, FDM.j′vp(ab.alg, f, vs, xs...)
         else
             @assert length(vs) == 1
-            return FDM.j′vp(ab.alg, f, vs[1], xs...)
+            return value, FDM.j′vp(ab.alg, f, vs[1], xs...)
         end
     end
 end
@@ -90,15 +92,16 @@ AD.primal_value(::ForwardDiffBackend2, ::Any, f, xs) = ForwardDiff.value.(f(xs..
 ## Zygote
 struct ZygoteBackend1 <: AD.AbstractReverseMode end
 const zygote_backend1 = ZygoteBackend1()
-AD.@primitive function pullback_function(ab::ZygoteBackend1, f, xs...)
+AD.@primitive function value_and_pullback_function(ab::ZygoteBackend1, f, xs...)
     return function (vs)
+        vs === nothing && return f(xs...), nothing
         # Supports only single output
-        _, back = Zygote.pullback(f, xs...)
+        value, back = Zygote.pullback(f, xs...)
         if vs isa AbstractVector
-            back(vs)
+            value, back(vs)
         else
             @assert length(vs) == 1
-            back(vs[1])
+            value, back(vs[1])
         end
     end
 end
