@@ -542,18 +542,17 @@ function define_pullback_function_and_friends(fdef)
     funcs = quote
         $(ExprTools.combinedef(fdef))
         function AbstractDifferentiation.jacobian($(args...),)
-            value_and_pbf = AbstractDifferentiation.value_and_pullback_function($(args...),)
-            value, _ = value_and_pbf(nothing)
+            value, pbf = AbstractDifferentiation.value_and_pullback_function($(args...),)
             identity_like = AbstractDifferentiation.identity_matrix_like(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
                     if VERSION < v"1.3"
                         return reduce(vcat, map(AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
-                            value_and_pbf(cols)[2]'
+                            pbf(cols)'
                         end)
                     else
                     return mapreduce(vcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
-                        value_and_pbf(cols)[2]'
+                        pbf(cols)'
                         end
                     end
                 end
@@ -562,10 +561,10 @@ function define_pullback_function_and_friends(fdef)
                 # value is a (grad,). Then, identity_like is a (matrix,).
                 # cols loops over columns of the matrix  
                 return vcat.(mapslices(identity_like[1], dims=1) do cols
-                    adjoint.(value_and_pbf((cols,))[2])
+                    adjoint.(pbf((cols,)))
                 end ...)
             else
-                return adjoint.(value_and_pbf(identity_like)[2])
+                return adjoint.(pbf(identity_like))
             end
         end
     end
