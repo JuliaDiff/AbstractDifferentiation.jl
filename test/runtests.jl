@@ -5,4 +5,5 @@ using Test
     include("test_utils.jl")
     include("defaults.jl")
     include("forwarddiff.jl")
+    include("reversediff.jl")
 end
