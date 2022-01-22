@@ -1,4 +1,4 @@
-using .ReverseDiff: ReverseDiff
+using .ReverseDiff: ReverseDiff, DiffResults
 
 primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
 
@@ -36,4 +36,18 @@ end
 
 function hessian(ba::ReverseDiffBackend, f, x::AbstractArray)
     return (ReverseDiff.hessian(f, x),)
+end
+
+function value_and_gradient(ba::ReverseDiffBackend, f, x::AbstractArray)
+    result = DiffResults.GradientResult(x)
+    cfg = ReverseDiff.GradientConfig(x)
+    ReverseDiff.gradient!(result, f, x, cfg)
+    return DiffResults.value(result), (DiffResults.derivative(result),)
+end
+
+function value_and_hessian(ba::ReverseDiffBackend, f, x)
+    result = DiffResults.HessianResult(x)
+    cfg = ReverseDiff.HessianConfig(result, x)
+    ReverseDiff.hessian!(result, f, x, cfg)
+    return DiffResults.value(result), (DiffResults.hessian(result),)
 end
