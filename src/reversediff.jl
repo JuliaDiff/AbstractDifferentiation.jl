@@ -7,7 +7,7 @@ primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
 
 AD backend that uses reverse mode with ReverseDiff.jl.
 """
-struct ReverseDiffBackend <: AbstractBackend end
+struct ReverseDiffBackend <: AbstractReverseMode end
 
 @primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
     xs_arr = map(asarray, xs)
