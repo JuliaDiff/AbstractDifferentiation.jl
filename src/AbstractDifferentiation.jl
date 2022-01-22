@@ -249,31 +249,9 @@ function value_and_pullback_function(
     f,
     xs...,
 )
-    return (ws) -> begin
-        local value
-        primalcalled = false
-        if ab isa AbstractFiniteDifference
-            value = primal_value(ab, nothing, f, xs)
-            primalcalled = true
-        end
-        if ws === nothing
-            vs = f(xs...)
-            if !primalcalled
-                value = primal_value(lowest(ab), vs, f, xs)
-                primalcalled = true
-            end
-            return value, nothing
-        end
-        pb = pullback_function(lowest(ab), (_xs...,) -> begin
-            vs = f(_xs...)
-            if !primalcalled
-                value = primal_value(lowest(ab), vs, f, xs)
-                primalcalled = true
-            end
-            return vs
-        end, xs...)(ws)
-        return value, pb
-    end
+    # TODO: use value_and_pullback_function as a primitive to avoid double execution of primal
+    # https://github.com/JuliaDiff/AbstractDifferentiation.jl/issues/34
+    return f(xs...), pullback_function(lowest(ab), f, xs...)
 end
 
 struct LazyDerivative{B, F, X}
