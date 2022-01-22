@@ -2,6 +2,11 @@ using .ReverseDiff: ReverseDiff, DiffResults
 
 primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
 
+"""
+    ReverseDiffBackend
+
+AD backend that uses reverse mode with ReverseDiff.jl.
+"""
 struct ReverseDiffBackend <: AbstractBackend end
 
 @primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
