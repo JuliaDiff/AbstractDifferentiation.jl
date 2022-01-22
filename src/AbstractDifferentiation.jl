@@ -505,8 +505,8 @@ macro primitive(expr)
     name = fdef[:name]
     if name == :pushforward_function
         return define_pushforward_function_and_friends(fdef) |> esc
-    elseif name == :pullback_function
-        return define_pullback_function_and_friends(fdef) |> esc
+    elseif name == :value_and_pullback_function
+        return define_value_and_pullback_function_and_friends(fdef) |> esc
     elseif name == :jacobian
         return define_jacobian_and_friends(fdef) |> esc
     elseif name == :primal_value
@@ -558,8 +558,8 @@ function define_pushforward_function_and_friends(fdef)
     return funcs
 end
 
-function define_pullback_function_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.pullback_function)
+function define_value_and_pullback_function_and_friends(fdef)
+    fdef[:name] = :(AbstractDifferentiation.value_and_pullback_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
