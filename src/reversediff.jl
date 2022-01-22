@@ -2,13 +2,16 @@ using .ReverseDiff: ReverseDiff
 
 struct ReverseDiffBackend <: AbstractBackend end
 
-@primitive function pullback_function(ba::ReverseDiffBackend, f, xs...)
-    return (ws) -> begin
-        tape = ReverseDiff.InstructionTape()
-        x_tracked = ReverseDiff.track.(xs, Ref(tape))
-        y_tracked = f(x_tracked...)
-        ReverseDiff.deriv!.(y_tracked, ws...)
-        ReverseDiff.reverse_pass!(tape)
-        return ReverseDiff.deriv.(x_tracked)
+@primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
+    xs_arr = map(asarray, xs)
+    tape = ReverseDiff.JacobianTape(xs_arr) do (xs_arr...)
+        xs_new = map(xs, xs_arr) do x, x_arr
+            return x isa Number ? only(x_arr) : x_arr
+        end
+        return asarray(f(xs_new...))
+    end
+    results = ReverseDiff.jacobian!(tape, xs_arr)
+    return map(xs, results) do x, result
+        return x isa Number ? vec(result) : result
     end
 end
