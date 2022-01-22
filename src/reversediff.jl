@@ -21,6 +21,15 @@ function jacobian(ba::ReverseDiffBackend, f, xs::AbstractArray...)
     return ReverseDiff.jacobian(asarray ∘ f, xs)
 end
 
+function derivative(ba::ReverseDiffBackend, f, xs::Number...)
+    tape = ReverseDiff.InstructionTape()
+    xs_tracked = ReverseDiff.TrackedReal.(xs, zero.(xs), Ref(tape))
+    y_tracked = f(xs_tracked...)
+    ReverseDiff.seed!(y_tracked)
+    ReverseDiff.reverse_pass!(tape)
+    return ReverseDiff.deriv.(xs_tracked)
+end
+
 function gradient(ba::ReverseDiffBackend, f, xs::AbstractArray...)
     return ReverseDiff.gradient(f, xs)
 end
