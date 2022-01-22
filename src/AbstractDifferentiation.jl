@@ -232,17 +232,8 @@ end
 end
 
 function pullback_function(ab::AbstractBackend, f, xs...)
-    return (ws) -> begin
-        return gradient(lowest(ab), (xs...,) -> begin
-            vs = f(xs...)
-            if ws isa Tuple
-                @assert length(vs) == length(ws)
-                return sum(Base.splat(_dot), zip(ws, vs))
-            else
-                return _dot(vs, ws)
-            end
-        end, xs...)
-    end
+    value_and_pbf = value_and_pullback_function(ab, f, xs...)
+    return (ws) -> value_and_pbf(ws)[2]
 end
 function value_and_pullback_function(
     ab::AbstractBackend,
@@ -264,14 +255,19 @@ function value_and_pullback_function(
             end
             return value, nothing
         end
-        pb = pullback_function(lowest(ab), (_xs...,) -> begin
+        pb = gradient(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
                 value = primal_value(lowest(ab), vs, f, xs)
                 primalcalled = true
             end
-            return vs
-        end, xs...)(ws)
+            if ws isa Tuple
+                @assert length(vs) == length(ws)
+                return sum(Base.splat(_dot), zip(ws, vs))
+            else
+                return _dot(vs, ws)
+            end
+        end, xs...)
         return value, pb
     end
 end
