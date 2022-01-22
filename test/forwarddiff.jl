@@ -2,8 +2,6 @@ using AbstractDifferentiation
 using Test
 using ForwardDiff
 
-include("test_utils.jl")
-
 @testset "ForwardDiffBackend" begin
     forwarddiff_backend = AD.ForwardDiffBackend()
     @testset "Derivative" begin

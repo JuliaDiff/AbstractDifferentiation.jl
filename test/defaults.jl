@@ -2,8 +2,6 @@ using AbstractDifferentiation
 using Test
 using FiniteDifferences, ForwardDiff, Zygote
 
-include("test_utils.jl")
-
 const FDM = FiniteDifferences
 
 ## FiniteDifferences
