@@ -192,7 +192,8 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG)
     w = rand(rng, length(fjac(xvec, yvec)))
     if multiple_inputs
         pb1 = AD.pullback_function(backend, fjac, xvec, yvec)(w)
-        valvec, pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)(w)
+        valvec, pbf2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)
+        pb2 = pbf2(w)
         @test valvec == fjac(xvec, yvec)
         @test norm.(pb2 .- pb1) == (0, 0)
         @test minimum(isapprox.(pb1, (vJxp(xvec,yvec,w), vJyp(xvec,yvec,w)), atol=1e-10))
@@ -200,8 +201,10 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG)
         @test yvec == yvec2
     end
 
-    valvec1, pb1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)(w)
-    valvec2, pb2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)(w)
+    valvec1, pbf1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)
+    pb1 = pbf1(w)
+    valvec2, pbf2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)
+    pb2 = pbf2(w)
     @test valvec1 == fjac(xvec, yvec)
     @test valvec2 == fjac(xvec, yvec)
     @test minimum(isapprox.((pb1[1],pb2[1]), (vJxp(xvec,yvec,w), vJyp(xvec,yvec,w)), atol=1e-10))
