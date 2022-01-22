@@ -1,5 +1,7 @@
 using .ReverseDiff: ReverseDiff
 
+primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
+
 struct ReverseDiffBackend <: AbstractBackend end
 
 @primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
