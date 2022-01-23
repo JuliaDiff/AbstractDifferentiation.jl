@@ -10,7 +10,7 @@ The type parameter `CS` denotes the chunk size of the differentiation algorithm.
 
 See also: [ForwardDiff.jl: Configuring Chunk Size](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Configuring-Chunk-Size)
 """
-struct ForwardDiffBackend{CS} <: AbstractBackend end
+struct ForwardDiffBackend{CS} <: AbstractForwardMode end
 
 """
     ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
