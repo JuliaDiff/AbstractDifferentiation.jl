@@ -8,6 +8,8 @@ using ForwardDiff
         @inferred(AD.ForwardDiffBackend(; chunksize=Val{1}()))
     ]
     @testset for backend in backends
+        @test backend isa AD.AbstractForwardMode
+
         @testset "Derivative" begin
             test_derivatives(backend)
         end
