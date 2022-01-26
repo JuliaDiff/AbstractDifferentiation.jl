@@ -6,4 +6,5 @@ using Test
     include("defaults.jl")
     include("forwarddiff.jl")
     include("reversediff.jl")
+    include("finitedifferences.jl")
 end
