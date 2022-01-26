@@ -76,9 +76,6 @@ end
 # support arrays and tuples
 @noinline step_toward(x, v, h) = x .+ h .* v
 
-@inline asarray(x) = [x]
-@inline asarray(x::AbstractArray) = x
-
 getchunksize(::Nothing) = Nothing
 getchunksize(::Val{N}) where {N} = N
 
