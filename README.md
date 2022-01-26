@@ -67,3 +67,16 @@ You can also get a struct for the lazy derivative/gradient/Jacobian/Hessian of a
 - `lg = lazy_gradient(ab::AbstractBackend, f, xs...)`: returns an operator `lg` for multiplying by the gradient of `f` at `xs`. You can apply the operator by multiplication e.g. `lg * y` where `y` is a number if `f` has a single input or a tuple of the same length as `xs` if `f` has multiple inputs.
 - `lh = lazy_hessian(ab::AbstractBackend, f, x)`: returns an operator `lh` for multiplying by the Hessian of the scalar-valued function `f` at `x`. You can apply the operator by multiplication e.g. `lh * y` or `y' * lh` where `y` is a number or a vector of the appropriate length.
 - `lj = lazy_jacobian(ab::AbstractBackend, f, xs...)`: returns an operator `lj` for multiplying by the Jacobian of `f` at `xs`. You can apply the operator by multiplication e.g. `lj * y` or `y' * lj` where `y` is a number, vector or tuple of numbers and/or vectors. If `f` has multiple inputs, `y` in `lj * y` should be a tuple. If `f` has multiply outputs, `y` in `y' * lj` should be a tuple. Otherwise, it should be a scalar or a vector of the appropriate length.
+
+## Citing this package
+
+If you use this package in your work, please cite the package:
+
+```bib
+@article{schafer2021abstractdifferentiation,
+  title={AbstractDifferentiation. jl: Backend-Agnostic Differentiable Programming in Julia},
+  author={Sch{\"a}fer, Frank and Tarek, Mohamed and White, Lyndon and Rackauckas, Chris},
+  journal={NeurIPS 2021 Differentiable Programming Workshop},
+  year={2021}
+}
+```
