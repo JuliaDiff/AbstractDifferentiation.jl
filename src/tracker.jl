@@ -23,3 +23,11 @@ end
     end
     return pullback
 end
+
+function derivative(ba::TrackerBackend, f, xs::Number...)
+    return Tracker.data.(Tracker.gradient(f, xs...))
+end
+
+function gradient(ba::TrackerBackend, f, xs::AbstractVector...)
+    return Tracker.data.(Tracker.gradient(f, xs...))
+end
