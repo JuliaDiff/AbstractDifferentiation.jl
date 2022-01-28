@@ -11,6 +11,10 @@ AD backend that uses reverse mode with Tracker.jl.
 """
 struct TrackerBackend <: AbstractReverseMode end
 
+function second_lowest(::TrackerBackend)
+    return throw(ArgumentError("Tracker backend does not support nested differentiation."))
+end
+
 @primitive function pullback_function(ba::TrackerBackend, f, xs...)
     value, back = Tracker.forward(f, xs...)
     function pullback(ws)

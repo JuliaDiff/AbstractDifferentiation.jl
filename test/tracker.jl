@@ -14,9 +14,6 @@ using Tracker
         @testset "Jacobian" begin
             test_jacobians(backend)
         end
-        @testset "Hessian" begin
-            test_hessians(backend)
-        end
         @testset "jvp" begin
             test_jvp(backend)
         end
@@ -31,9 +28,6 @@ using Tracker
         end
         @testset "Lazy Jacobian" begin
             test_lazy_jacobians(backend)
-        end
-        @testset "Lazy Hessian" begin
-            test_lazy_hessians(backend)
         end
     end
 end
