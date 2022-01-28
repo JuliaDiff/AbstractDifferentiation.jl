@@ -1,9 +1,5 @@
 using .Tracker: Tracker
 
-primal_value(x::Tracker.TrackedArray) = Tracker.data(x)
-primal_value(x::Tracker.TrackedReal) = Tracker.data(x)
-primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
-
 """
     TrackerBackend
 
