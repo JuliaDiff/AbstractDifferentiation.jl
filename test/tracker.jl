@@ -5,6 +5,10 @@ using Tracker
 @testset "TrackerBackend" begin
     backends = [@inferred(AD.TrackerBackend())]
     @testset for backend in backends
+        @testset "errors when nested" begin
+            @test_throws ArgumentError AD.second_lowest(backend)
+            @test_throws ArgumentError AD.hessian(backend, sum, randn(3))
+        end
         @testset "Derivative" begin
             test_derivatives(backend)
         end
