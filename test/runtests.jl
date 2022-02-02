@@ -7,4 +7,5 @@ using Test
     include("forwarddiff.jl")
     include("reversediff.jl")
     include("finitedifferences.jl")
+    include("tracker.jl")
 end
