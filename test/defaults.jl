@@ -109,34 +109,34 @@ end
     end
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
-            test_derivatives(fdm_backend1, test_types=false)
-            test_derivatives(fdm_backend2, test_types=false)
-            test_derivatives(fdm_backend3, test_types=false)
+            test_derivatives(fdm_backend1)
+            test_derivatives(fdm_backend2)
+            test_derivatives(fdm_backend3)
         end
         @testset "Gradient" begin
-            test_gradients(fdm_backend1, test_types=false)
-            test_gradients(fdm_backend2, test_types=false)
-            test_gradients(fdm_backend3, test_types=false)
+            test_gradients(fdm_backend1)
+            test_gradients(fdm_backend2)
+            test_gradients(fdm_backend3)
         end
         @testset "Jacobian" begin
-            test_jacobians(fdm_backend1, test_types=false)
-            test_jacobians(fdm_backend2, test_types=false)
-            test_jacobians(fdm_backend3, test_types=false)
+            test_jacobians(fdm_backend1)
+            test_jacobians(fdm_backend2)
+            test_jacobians(fdm_backend3)
         end
         @testset "Hessian" begin
-            test_hessians(fdm_backend1, test_types=false)
-            test_hessians(fdm_backend2, test_types=false)
-            test_hessians(fdm_backend3, test_types=false)
+            test_hessians(fdm_backend1)
+            test_hessians(fdm_backend2)
+            test_hessians(fdm_backend3)
         end
         @testset "jvp" begin
             test_jvp(fdm_backend1, test_types=false)
-            test_jvp(fdm_backend2; vaugmented=true, test_types=false)
-            test_jvp(fdm_backend3, test_types=false)
+            test_jvp(fdm_backend2; vaugmented=true)
+            test_jvp(fdm_backend3)
         end
         @testset "j′vp" begin
-            test_j′vp(fdm_backend1, test_types=false)
-            test_j′vp(fdm_backend2, test_types=false)
-            test_j′vp(fdm_backend3, test_types=false)
+            test_j′vp(fdm_backend1)
+            test_j′vp(fdm_backend2)
+            test_j′vp(fdm_backend3)
         end
         @testset "Lazy Derivative" begin
             test_lazy_derivatives(fdm_backend1)
