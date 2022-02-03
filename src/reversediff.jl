@@ -1,6 +1,8 @@
 using .ReverseDiff: ReverseDiff, DiffResults
 
 primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
+primal_value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
+primal_value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
 
 """
     ReverseDiffBackend
