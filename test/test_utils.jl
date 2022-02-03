@@ -182,7 +182,7 @@ function test_hessians(backend; multiple_inputs=false, test_types=true)
     valscalar, grad, hess3 = AD.value_gradient_and_hessian(backend, fhess, xvec)
     if test_types
         @test valscalar isa Float64
-        @test grad[1] isa Vector{Float64}
+        @test grad[1] isa AbstractVector{Float64}
         @test hess3[1] isa Matrix{Float64}
     end
     @test valscalar == fgrad(xvec, yvec)
