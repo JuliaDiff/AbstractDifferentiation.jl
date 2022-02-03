@@ -39,6 +39,7 @@ end
 end
 
 primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+primal_value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 
 # these implementations are more efficient than the fallbacks
 

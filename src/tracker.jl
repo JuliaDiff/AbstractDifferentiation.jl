@@ -11,6 +11,10 @@ function second_lowest(::TrackerBackend)
     return throw(ArgumentError("Tracker backend does not support nested differentiation."))
 end
 
+primal_value(x::Tracker.TrackedReal) = Tracker.data(x)
+primal_value(x::Tracker.TrackedArray) = Tracker.data(x)
+primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
+
 @primitive function pullback_function(ba::TrackerBackend, f, xs...)
     value, back = Tracker.forward(f, xs...)
     function pullback(ws)

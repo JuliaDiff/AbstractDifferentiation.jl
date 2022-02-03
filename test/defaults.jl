@@ -129,7 +129,7 @@ end
             test_hessians(fdm_backend3)
         end
         @testset "jvp" begin
-            test_jvp(fdm_backend1)
+            test_jvp(fdm_backend1, test_types=false)
             test_jvp(fdm_backend2; vaugmented=true)
             test_jvp(fdm_backend3)
         end

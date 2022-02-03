@@ -9,6 +9,10 @@ using Tracker
             @test_throws ArgumentError AD.second_lowest(backend)
             @test_throws ArgumentError AD.hessian(backend, sum, randn(3))
         end
+        @testset "primal_value for array of tracked reals" begin
+            @test AD.primal_value([Tracker.TrackedReal(1.0)]) isa Vector{Float64}
+            @test AD.primal_value(fill(Tracker.TrackedReal(1.0), 1, 1)) isa Matrix{Float64}
+        end
         @testset "Derivative" begin
             test_derivatives(backend)
         end
