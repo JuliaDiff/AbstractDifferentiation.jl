@@ -17,19 +17,19 @@ using FiniteDifferences
             test_derivatives(backend)
         end
         @testset "Gradient" begin
-            test_gradients(backend)
+            test_gradients(backend, test_types=false)
         end
         @testset "Jacobian" begin
-            test_jacobians(backend)
+            test_jacobians(backend, test_types=false)
         end
         @testset "Hessian" begin
-            test_hessians(backend)
+            test_hessians(backend, test_types=false)
         end
         @testset "jvp" begin
-            test_jvp(backend; vaugmented=true)
+            test_jvp(backend; vaugmented=true, test_types=false)
         end
         @testset "j′vp" begin
-            test_j′vp(backend)
+            test_j′vp(backend, test_types=false)
         end
         @testset "Lazy Derivative" begin
             test_lazy_derivatives(backend)
