@@ -9,6 +9,9 @@ using Tracker
             @test_throws ArgumentError AD.second_lowest(backend)
             @test_throws ArgumentError AD.hessian(backend, sum, randn(3))
         end
+        @testset "primal_value for array of tracked reals" begin
+            @test AD.primal_value([Tracker.gradient(sum, [1.0])[1][1]]) isa Vector{Float64}
+        end
         @testset "Derivative" begin
             test_derivatives(backend)
         end
