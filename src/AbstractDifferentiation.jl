@@ -1,6 +1,7 @@
 module AbstractDifferentiation
 
 using LinearAlgebra, ExprTools, Requires, Compat
+using ChainRulesCore: RuleConfig, rrule_via_ad
 
 export AD
 
@@ -643,11 +644,17 @@ end
 @inline asarray(x) = [x]
 @inline asarray(x::AbstractArray) = x
 
+include("ruleconfig.jl")
 function __init__()
     @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("forwarddiff.jl")
     @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("reversediff.jl")
     @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("finitedifferences.jl")
     @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("tracker.jl")
+    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
+        @static if VERSION >= v"1.6"
+            ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+        end
+    end
 end
 
 end
