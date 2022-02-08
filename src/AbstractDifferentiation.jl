@@ -652,6 +652,9 @@ function __init__()
     @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
         ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
     end
+    @require Yota = "cd998857-8626-517d-b929-70ad188a48f0" begin
+        YotaBackend() = ReverseRuleConfigBackend(Yota.YotaRuleConfig())       
+    end
 end
 
 end
