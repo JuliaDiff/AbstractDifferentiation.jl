@@ -1,6 +1,6 @@
 using AbstractDifferentiation
 using Test
-using Zygote, Yota
+using Zygote
 
 @testset "ReverseRuleConfigBackend(ZygoteRuleConfig())" begin
     backends = [@inferred(AD.ZygoteBackend())]
