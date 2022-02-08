@@ -8,5 +8,7 @@ using Test
     include("reversediff.jl")
     include("finitedifferences.jl")
     include("tracker.jl")
-    include("ruleconfig.jl")
+    @static if VERSION >= v"1.6"
+        include("ruleconfig.jl")
+    end
 end
