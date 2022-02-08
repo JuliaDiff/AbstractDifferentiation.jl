@@ -8,4 +8,5 @@ using Test
     include("reversediff.jl")
     include("finitedifferences.jl")
     include("tracker.jl")
+    include("ruleconfig.jl")
 end
