@@ -1,6 +1,7 @@
 module AbstractDifferentiation
 
 using LinearAlgebra, ExprTools, Requires, Compat
+using ChainRulesCore: RuleConfig, rrule_via_ad
 
 export AD
 
@@ -650,7 +651,9 @@ function __init__()
     @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("finitedifferences.jl")
     @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("tracker.jl")
     @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
-        ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+        @static if VERSION >= v"1.6"
+            ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+        end
     end
     @require Yota = "cd998857-8626-517d-b929-70ad188a48f0" begin
         YotaBackend() = ReverseRuleConfigBackend(Yota.YotaRuleConfig())       
