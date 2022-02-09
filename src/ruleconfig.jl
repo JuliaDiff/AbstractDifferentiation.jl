@@ -3,7 +3,7 @@
 
 AD backend that uses reverse mode with any ChainRules-compatible reverse-mode AD package.
 """
-struct ReverseRuleConfigBackend{RC<:RuleConfig{>:HasReverseMode}} <: AbstractReverseMode
+struct ReverseRuleConfigBackend{RC<:RuleConfig{>:ChainRulesCore.HasReverseMode}} <: AbstractReverseMode
     ruleconfig::RC
 end
 
