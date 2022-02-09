@@ -1,7 +1,7 @@
 module AbstractDifferentiation
 
 using LinearAlgebra, ExprTools, Requires, Compat
-using ChainRulesCore: RuleConfig, rrule_via_ad
+using ChainRulesCore: ChainRulesCore
 
 export AD
 
