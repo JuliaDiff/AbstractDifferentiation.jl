@@ -3,17 +3,13 @@
 
 AD backend that uses reverse mode with any ChainRules-compatible reverse-mode AD package.
 """
-struct ReverseRuleConfigBackend{RC <: RuleConfig} <: AbstractReverseMode
+struct ReverseRuleConfigBackend{RC<:RuleConfig{>:HasReverseMode}} <: AbstractReverseMode
     ruleconfig::RC
 end
 
 AD.@primitive function pullback_function(ab::ReverseRuleConfigBackend, f, xs...)
-    return (vs) -> begin
-        _, back = rrule_via_ad(ab.ruleconfig, f, xs...)
-        if vs isa Tuple && length(vs) === 1
-            return Base.tail(back(vs[1]))
-        else
-            return Base.tail(back(vs))
-        end
-    end
+    _, back = rrule_via_ad(ab.ruleconfig, f, xs...)
+    pullback(vs) = Base.tail(back(vs))
+    pullback(vs::Tuple{Any}) = Base.tail(back(first(vs))
+    return pullback
 end
