@@ -19,7 +19,42 @@ using AbstractDifferentiation
 
 ## `AbstractDifferentiation` backends
 
-To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`. For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`. For instance, let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend. To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`. To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
+To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`.
+The following backends are made available by `AbstractDifferentiation` if their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)):
+
+- `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
+- `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
+- `AD.ReverseDiffBackend()` for [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
+- `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode backend
+- `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl)
+- `AD.TrackerBackend()` for [Tracker.jl](https://github.com/FluxML/Tracker.jl)
+
+Here's an example:
+
+```julia
+julia> using AbstractDifferentiation
+
+julia> ab = AD.ZygoteBackend()
+ERROR: UndefVarError: ZygoteBackend not defined
+Stacktrace:
+ [1] getproperty(x::Module, f::Symbol)
+   @ Base ./Base.jl:35
+ [2] top-level scope
+   @ REPL[3]:1
+
+julia> using Zygote
+
+julia> ab = AD.ZygoteBackend()
+AbstractDifferentiation.ReverseRuleConfigBackend{Zygote.ZygoteRuleConfig{Zygote.Context}}(Zygote.ZygoteRuleConfig{Zygote.Context}(Zygote.Context(nothing)))
+
+julia> f(x) = log(sum(exp, x))
+f (generic function with 1 method)
+
+julia> AD.gradient(ab, f, rand(10))
+([0.07163448353282538, 0.08520350535348796, 0.09675622487503996, 0.1522744408520505, 0.12174662595572318, 0.07996969757526722, 0.07832665607158593, 0.11001685581681672, 0.06691909637037166, 0.1371524135968315],)
+```
+
+For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`. For instance, let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend. To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`. To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
 
 ## Backend-agnostic interface
 
