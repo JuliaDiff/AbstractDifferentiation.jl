@@ -20,7 +20,8 @@ using AbstractDifferentiation
 ## `AbstractDifferentiation` backends
 
 To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`.
-The following backends are made available by `AbstractDifferentiation` if their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)):
+The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)).
+In the long term, these backend objects are meant be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
 
 - `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 - `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
