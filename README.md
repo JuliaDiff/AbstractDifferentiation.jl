@@ -20,30 +20,23 @@ using AbstractDifferentiation
 ## `AbstractDifferentiation` backends
 
 To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`.
-The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)).
-In the long term, these backend objects are meant be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
+In particular, you may want to use `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode differentiation package.
+
+The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)):
 
 - `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 - `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
 - `AD.ReverseDiffBackend()` for [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
 - `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode backend
-- `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 - `AD.TrackerBackend()` for [Tracker.jl](https://github.com/FluxML/Tracker.jl)
+- `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl), which is a special case of `AD.ReverseRuleConfigBackend`
+
+In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
 
 Here's an example:
 
 ```julia
-julia> using AbstractDifferentiation
-
-julia> ab = AD.ZygoteBackend()
-ERROR: UndefVarError: ZygoteBackend not defined
-Stacktrace:
- [1] getproperty(x::Module, f::Symbol)
-   @ Base ./Base.jl:35
- [2] top-level scope
-   @ REPL[3]:1
-
-julia> using Zygote
+julia> using AbstractDifferentiation, Zygote
 
 julia> ab = AD.ZygoteBackend()
 AbstractDifferentiation.ReverseRuleConfigBackend{Zygote.ZygoteRuleConfig{Zygote.Context}}(Zygote.ZygoteRuleConfig{Zygote.Context}(Zygote.Context(nothing)))
