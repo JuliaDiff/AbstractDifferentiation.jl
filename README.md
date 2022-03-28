@@ -27,7 +27,6 @@ The following backends are temporarily made available by `AbstractDifferentiatio
 - `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 - `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
 - `AD.ReverseDiffBackend()` for [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
-- `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode backend
 - `AD.TrackerBackend()` for [Tracker.jl](https://github.com/FluxML/Tracker.jl)
 - `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl), which is a special case of `AD.ReverseRuleConfigBackend`
 
