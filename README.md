@@ -47,6 +47,14 @@ julia> AD.gradient(ab, f, rand(10))
 ([0.07163448353282538, 0.08520350535348796, 0.09675622487503996, 0.1522744408520505, 0.12174662595572318, 0.07996969757526722, 0.07832665607158593, 0.11001685581681672, 0.06691909637037166, 0.1371524135968315],)
 ```
 
+All of the backend-dependent functions in this package also have a [do-block](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments)-friendly form where the `AbstractBackend` object is specified via the `backend` keyword argument and the function to be differentiated is the first argument. For example, the above call can also be written as:
+
+```julia
+julia> AD.gradient(rand(10); backend=AD.ZygoteBackend()) do x
+           log(sum(exp, x))
+       end
+```
+
 For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`. For instance, let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend. To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`. To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
 
 ## Backend-agnostic interface

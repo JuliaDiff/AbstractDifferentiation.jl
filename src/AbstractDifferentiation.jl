@@ -43,13 +43,22 @@ function derivative(ab::AbstractBackend, f, xs::Number...)
         return (der,)
     end
 end
+function derivative(f, xs::Number...; backend::AbstractBackend)
+    return derivative(backend, f, xs...)
+end
 
 function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
 end
+function gradient(f, xs...; backend::AbstractBackend)
+    return gradient(backend, f, xs...)
+end
 function jacobian(ab::AbstractBackend, f, xs...) end
 function jacobian(ab::HigherOrderBackend, f, xs...) 
-    jacobian(lowest(ab), f, xs...)
+    return jacobian(lowest(ab), f, xs...)
+end
+function jacobian(f, xs...; backend::AbstractBackend)
+    return jacobian(backend, f, xs...)
 end
 
 function hessian(ab::AbstractBackend, f, x)
@@ -62,14 +71,23 @@ function hessian(ab::AbstractBackend, f, x)
         gradient(lowest(ab), f, x)[1] # gradient returns a tuple
     end, x)
 end
+function hessian(f, x; backend::AbstractBackend)
+    return hessian(backend, f, x)
+end
 
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
     return value[1], getindex.(jacs, 1)
 end
+function value_and_derivative(f, xs::Number...; backend::AbstractBackend)
+    return value_and_derivative(backend, f, xs...)
+end
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
     return value, reshape.(adjoint.(jacs),size.(xs))
+end
+function value_and_gradient(f, xs...; backend::AbstractBackend)
+    return value_and_gradient(backend, f, xs...)
 end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
@@ -88,6 +106,9 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
     end, xs...)
 
     return value, jacs
+end
+function value_and_jacobian(f, xs...; backend::AbstractBackend)
+    return value_and_jacobian(backend, f, xs...)
 end
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -130,6 +151,9 @@ function value_and_hessian(ab::HigherOrderBackend, f, x)
     end, x)
     return value, hess
 end
+function value_and_hessian(f, x; backend::AbstractBackend)
+    return value_and_hessian(backend, f, x)
+end
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
@@ -166,6 +190,9 @@ function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     end, x)
     return value, (grads,), hess
 end
+function value_gradient_and_hessian(f, x; backend::AbstractBackend)
+    return value_gradient_and_hessian(backend, f, x)
+end
 
 function pushforward_function(
     ab::AbstractBackend,
@@ -185,6 +212,9 @@ function pushforward_function(
             end
         end, _zero.(xs, ds)...)
     end
+end
+function pushforward_function(f, xs...; backend::AbstractBackend)
+    return pushforward_function(backend, f, xs...)
 end
 function value_and_pushforward_function(
     ab::AbstractBackend,
@@ -213,6 +243,9 @@ function value_and_pushforward_function(
         
         return value, pf
     end
+end
+function value_and_pushforward_function(f, xs...; backend::AbstractBackend)
+    return value_and_pushforward_function(backend, f, xs...)
 end
 
 _zero(::Number, d::Number) = zero(d)
@@ -245,6 +278,9 @@ function pullback_function(ab::AbstractBackend, f, xs...)
         end, xs...)
     end
 end
+function pullback_function(f, xs...; backend::AbstractBackend)
+    return pullback_function(backend, f, xs...)
+end
 function value_and_pullback_function(
     ab::AbstractBackend,
     f,
@@ -275,6 +311,9 @@ function value_and_pullback_function(
         end, xs...)(ws)
         return value, pb
     end
+end
+function value_and_pullback_function(f, xs...; backend::AbstractBackend)
+    return value_and_pullback_function(backend, f, xs...)
 end
 
 struct LazyDerivative{B, F, X}
@@ -465,14 +504,26 @@ end
 function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
     return LazyDerivative(ab, f, xs)
 end
+function lazy_derivative(f, xs::Number...; backend::AbstractBackend)
+    return LazyDerivative(backend, f, xs)
+end
 function lazy_gradient(ab::AbstractBackend, f, xs...)
     return LazyGradient(ab, f, xs)
+end
+function lazy_gradient(f, xs...; backend::AbstractBackend)
+    return LazyGradient(backend, f, xs)
 end
 function lazy_hessian(ab::AbstractBackend, f, xs...)
     return LazyHessian(ab, f, xs)
 end
+function lazy_hessian(f, xs...; backend::AbstractBackend)
+    return LazyHessian(backend, f, xs)
+end
 function lazy_jacobian(ab::AbstractBackend, f, xs...)
     return LazyJacobian(ab, f, xs)
+end
+function lazy_jacobian(f, xs...; backend::AbstractBackend)
+    return LazyJacobian(backend, f, xs)
 end
 
 struct D{B, F}
