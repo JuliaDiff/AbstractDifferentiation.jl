@@ -6,6 +6,9 @@ if EXTENSIONS_SUPPORTED
 else
     using ..ForwardDiff: ForwardDiff, DiffResults
 end
+if VERSION < v"1.4.0-DEV.142"
+    using Compat: only
+end
 
 const AD = AbstractDifferentiation
 

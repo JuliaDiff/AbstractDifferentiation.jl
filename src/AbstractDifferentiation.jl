@@ -1,6 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools, Compat
+using LinearAlgebra, ExprTools
 using ChainRulesCore: ChainRulesCore
 
 abstract type AbstractBackend end
