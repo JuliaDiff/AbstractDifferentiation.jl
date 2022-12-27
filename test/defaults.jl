@@ -2,6 +2,7 @@ using AbstractDifferentiation
 using Test
 using FiniteDifferences, ForwardDiff, Zygote
 
+const AD = AbstractDifferentiation
 const FDM = FiniteDifferences
 
 ## FiniteDifferences

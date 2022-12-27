@@ -1,11 +1,7 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools, Requires, Compat
+using LinearAlgebra, ExprTools, Compat
 using ChainRulesCore: ChainRulesCore
-
-export AD
-
-const AD = AbstractDifferentiation
 
 abstract type AbstractBackend end
 abstract type AbstractFiniteDifference <: AbstractBackend end
@@ -645,14 +641,21 @@ end
 @inline asarray(x::AbstractArray) = x
 
 include("ruleconfig.jl")
+include("backends.jl")
+
+# TODO: Replace with proper version
+const EXTENSIONS_SUPPORTED = isdefined(Base, :get_extension)
+if !EXTENSIONS_SUPPORTED
+    using Requires: @require
+end
 function __init__()
-    @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("forwarddiff.jl")
-    @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("reversediff.jl")
-    @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("finitedifferences.jl")
-    @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("tracker.jl")
-    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
+    @static if !EXTENSIONS_SUPPORTED
+        @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("../ext/ForwardDiffExt.jl")
+        @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("../ext/ReverseDiffExt.jl")
+        @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("../ext/FiniteDifferencesExt.jl")
+        @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("../ext/TrackerExt.jl")
         @static if VERSION >= v"1.6"
-            ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+            @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ZygoteExt.jl")
         end
     end
 end

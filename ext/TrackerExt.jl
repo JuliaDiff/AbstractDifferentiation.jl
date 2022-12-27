@@ -1,21 +1,23 @@
-using .Tracker: Tracker
+module TrackerExt
 
-"""
-    TrackerBackend
+using AbstractDifferentiation: AbstractDifferentiation, EXTENSIONS_SUPPORTED, TrackerBackend
+if EXTENSIONS_SUPPORTED
+    using Tracker: Tracker
+else
+    using ..Tracker: Tracker
+end
 
-AD backend that uses reverse mode with Tracker.jl.
-"""
-struct TrackerBackend <: AbstractReverseMode end
+const AD = AbstractDifferentiation
 
-function second_lowest(::TrackerBackend)
+function AD.second_lowest(::TrackerBackend)
     return throw(ArgumentError("Tracker backend does not support nested differentiation."))
 end
 
-primal_value(x::Tracker.TrackedReal) = Tracker.data(x)
-primal_value(x::Tracker.TrackedArray) = Tracker.data(x)
-primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
+AD.primal_value(x::Tracker.TrackedReal) = Tracker.data(x)
+AD.primal_value(x::Tracker.TrackedArray) = Tracker.data(x)
+AD.primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
 
-@primitive function pullback_function(ba::TrackerBackend, f, xs...)
+AD.@primitive function pullback_function(ba::TrackerBackend, f, xs...)
     value, back = Tracker.forward(f, xs...)
     function pullback(ws)
         if ws isa Tuple && !(value isa Tuple) 
@@ -28,10 +30,12 @@ primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
     return pullback
 end
 
-function derivative(ba::TrackerBackend, f, xs::Number...)
+function AD.derivative(ba::TrackerBackend, f, xs::Number...)
     return Tracker.data.(Tracker.gradient(f, xs...))
 end
 
-function gradient(ba::TrackerBackend, f, xs::AbstractVector...)
+function AD.gradient(ba::TrackerBackend, f, xs::AbstractVector...)
     return Tracker.data.(Tracker.gradient(f, xs...))
 end
+
+end # module

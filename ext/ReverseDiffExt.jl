@@ -1,17 +1,19 @@
-using .ReverseDiff: ReverseDiff, DiffResults
+module ReverseDiffExt
 
-primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
-primal_value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
-primal_value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
+using AbstractDifferentiation: AbstractDifferentiation, asarray, EXTENSIONS_SUPPORTED, ReverseDiffBackend
+if EXTENSIONS_SUPPORTED
+    using ReverseDiff: ReverseDiff, DiffResults
+else
+    using ..ReverseDiff: ReverseDiff, DiffResults
+end
 
-"""
-    ReverseDiffBackend
+const AD = AbstractDifferentiation
 
-AD backend that uses reverse mode with ReverseDiff.jl.
-"""
-struct ReverseDiffBackend <: AbstractReverseMode end
+AD.primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
+AD.primal_value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
+AD.primal_value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
 
-@primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
+AD.@primitive function jacobian(ba::ReverseDiffBackend, f, xs...)
     xs_arr = map(asarray, xs)
     tape = ReverseDiff.JacobianTape(xs_arr) do (xs_arr...)
         xs_new = map(xs, xs_arr) do x, x_arr
@@ -24,11 +26,11 @@ struct ReverseDiffBackend <: AbstractReverseMode end
         return x isa Number ? vec(result) : result
     end
 end
-function jacobian(ba::ReverseDiffBackend, f, xs::AbstractArray...)
+function AD.jacobian(ba::ReverseDiffBackend, f, xs::AbstractArray...)
     return ReverseDiff.jacobian(asarray ∘ f, xs)
 end
 
-function derivative(ba::ReverseDiffBackend, f, xs::Number...)
+function AD.derivative(ba::ReverseDiffBackend, f, xs::Number...)
     tape = ReverseDiff.InstructionTape()
     xs_tracked = ReverseDiff.TrackedReal.(xs, zero.(xs), Ref(tape))
     y_tracked = f(xs_tracked...)
@@ -37,24 +39,26 @@ function derivative(ba::ReverseDiffBackend, f, xs::Number...)
     return ReverseDiff.deriv.(xs_tracked)
 end
 
-function gradient(ba::ReverseDiffBackend, f, xs::AbstractArray...)
+function AD.gradient(ba::ReverseDiffBackend, f, xs::AbstractArray...)
     return ReverseDiff.gradient(f, xs)
 end
 
-function hessian(ba::ReverseDiffBackend, f, x::AbstractArray)
+function AD.hessian(ba::ReverseDiffBackend, f, x::AbstractArray)
     return (ReverseDiff.hessian(f, x),)
 end
 
-function value_and_gradient(ba::ReverseDiffBackend, f, x::AbstractArray)
+function AD.value_and_gradient(ba::ReverseDiffBackend, f, x::AbstractArray)
     result = DiffResults.GradientResult(x)
     cfg = ReverseDiff.GradientConfig(x)
     ReverseDiff.gradient!(result, f, x, cfg)
     return DiffResults.value(result), (DiffResults.derivative(result),)
 end
 
-function value_and_hessian(ba::ReverseDiffBackend, f, x)
+function AD.value_and_hessian(ba::ReverseDiffBackend, f, x)
     result = DiffResults.HessianResult(x)
     cfg = ReverseDiff.HessianConfig(result, x)
     ReverseDiff.hessian!(result, f, x, cfg)
     return DiffResults.value(result), (DiffResults.hessian(result),)
 end
+
+end # module

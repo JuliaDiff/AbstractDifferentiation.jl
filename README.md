@@ -11,18 +11,24 @@ Julia has more (automatic) differentiation packages than you can count on 2 hand
 
 ## Loading `AbstractDifferentiation`
 
-To load `AbstractDifferentiation`, use:
+To load `AbstractDifferentiation`, it is recommended to use
 ```julia
-using AbstractDifferentiation
+import AbstractDifferentiation as AD
 ```
-`AbstractDifferentiation` exports a single name `AD` which is just an alias for the `AbstractDifferentiation` module itself. You can use this to access names inside `AbstractDifferentiation` using `AD.<>` instead of typing the long name `AbstractDifferentiation`.
+on Julia ≥ 1.6 and
+```julia
+import AbstractDifferentiation
+const AD = AbstractDifferentiation
+```
+on older Julia versions.
+With the `AD` alias you can access names inside of `AbstractDifferentiation` using `AD.<>` instead of typing the long name `AbstractDifferentiation`.
 
 ## `AbstractDifferentiation` backends
 
 To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`.
 In particular, you may want to use `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode differentiation package.
 
-The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [Requires.jl](https://github.com/JuliaPackaging/Requires.jl)):
+The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [weak dependencies](https://pkgdocs.julialang.org/dev/creating-packages/#Weak-dependencies) on Julia ≥ 1.9 and [Requires.jl](https://github.com/JuliaPackaging/Requires.jl) on older Julia versions):
 
 - `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 - `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
@@ -35,7 +41,7 @@ In the long term, these backend objects (and many more) will be defined within t
 Here's an example:
 
 ```julia
-julia> using AbstractDifferentiation, Zygote
+julia> import AbstractDifferentiation as AD, Zygote
 
 julia> ab = AD.ZygoteBackend()
 AbstractDifferentiation.ReverseRuleConfigBackend{Zygote.ZygoteRuleConfig{Zygote.Context}}(Zygote.ZygoteRuleConfig{Zygote.Context}(Zygote.Context(nothing)))
