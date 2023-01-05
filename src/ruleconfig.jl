@@ -9,7 +9,13 @@ end
 
 AD.@primitive function pullback_function(ab::ReverseRuleConfigBackend, f, xs...)
     _, back = ChainRulesCore.rrule_via_ad(ab.ruleconfig, f, xs...)
-    pullback(vs) = Base.tail(back(vs))
-    pullback(vs::Tuple{Any}) = Base.tail(back(first(vs)))
+    function pullback(vs)
+        grad = Base.tail(back(vs))
+        empty_cache!(ab.ruleconfig)
+        grad
+    end
+    pullback(vs::Tuple{Any}) = pullback(first(vs))
     return pullback
 end
+
+empty_cache!(ruleconfig::ChainRulesCore.RuleConfig) = ruleconfig

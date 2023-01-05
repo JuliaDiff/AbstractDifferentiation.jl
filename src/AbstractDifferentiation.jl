@@ -653,6 +653,10 @@ function __init__()
     @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
         @static if VERSION >= v"1.6"
             ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+            function empty_cache!(ruleconfig::Zygote.ZygoteRuleConfig)
+                ruleconfig.context.cache = nothing
+                ruleconfig
+            end
         end
     end
 end
