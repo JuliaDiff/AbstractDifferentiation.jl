@@ -1,7 +1,10 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools, Compat
+using LinearAlgebra, ExprTools
 using ChainRulesCore: ChainRulesCore
+if VERSION < v"1.1.0-DEV.792"
+    using Compat: eachcol
+end
 
 abstract type AbstractBackend end
 abstract type AbstractFiniteDifference <: AbstractBackend end
