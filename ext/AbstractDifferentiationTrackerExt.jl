@@ -1,4 +1,4 @@
-module TrackerExt
+module AbstractDifferentiationTrackerExt
 
 using AbstractDifferentiation: AbstractDifferentiation, EXTENSIONS_SUPPORTED, TrackerBackend
 if EXTENSIONS_SUPPORTED

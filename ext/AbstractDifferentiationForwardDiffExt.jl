@@ -1,4 +1,4 @@
-module ForwardDiffExt
+module AbstractDifferentiationForwardDiffExt
 
 using AbstractDifferentiation: AbstractDifferentiation, asarray, EXTENSIONS_SUPPORTED, ForwardDiffBackend
 if EXTENSIONS_SUPPORTED

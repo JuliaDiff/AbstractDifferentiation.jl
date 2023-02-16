@@ -1,4 +1,4 @@
-module FiniteDifferencesExt
+module AbstractDifferentiationFiniteDifferencesExt
 
 using AbstractDifferentiation: AbstractDifferentiation, EXTENSIONS_SUPPORTED, FiniteDifferencesBackend
 if EXTENSIONS_SUPPORTED

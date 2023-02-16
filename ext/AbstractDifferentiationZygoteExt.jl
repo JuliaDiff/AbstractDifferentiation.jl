@@ -1,4 +1,4 @@
-module ZygoteExt
+module AbstractDifferentiationZygoteExt
 
 using AbstractDifferentiation: AbstractDifferentiation, EXTENSIONS_SUPPORTED, ReverseRuleConfigBackend
 

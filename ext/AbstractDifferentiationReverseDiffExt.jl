@@ -1,4 +1,4 @@
-module ReverseDiffExt
+module AbstractDifferentiationReverseDiffExt
 
 using AbstractDifferentiation: AbstractDifferentiation, asarray, EXTENSIONS_SUPPORTED, ReverseDiffBackend
 if EXTENSIONS_SUPPORTED
