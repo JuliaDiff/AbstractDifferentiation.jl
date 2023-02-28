@@ -54,7 +54,8 @@ struct TrackerBackend <: AbstractReverseMode end
 AD backend that uses reverse mode with any ChainRules-compatible reverse-mode AD package.
 
 !!! note
-    To be able to use this backend, you have to load ChainRulesCore.
+    On Julia >= 1.9, you have to load ChainRulesCore (possibly implicitly by loading
+    a ChainRules-compatible AD package) to be able to use this backend.
 """
 struct ReverseRuleConfigBackend{RC} <: AbstractReverseMode
     ruleconfig::RC

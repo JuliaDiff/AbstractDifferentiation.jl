@@ -13,7 +13,7 @@ AD.primal_value(x::ReverseDiff.TrackedReal) = ReverseDiff.value(x)
 AD.primal_value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
 AD.primal_value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
 
-AD.@primitive function jacobian(::AD.ReverseDiffBackend, f, xs...)
+AD.@primitive function jacobian(ba::AD.ReverseDiffBackend, f, xs...)
     xs_arr = map(AD.asarray, xs)
     tape = ReverseDiff.JacobianTape(xs_arr) do (xs_arr...)
         xs_new = map(xs, xs_arr) do x, x_arr

@@ -24,7 +24,7 @@ function AD.ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
     return AD.ForwardDiffBackend{getchunksize(chunksize)}()
 end
 
-AD.@primitive function pushforward_function(::AD.ForwardDiffBackend, f, xs...)
+AD.@primitive function pushforward_function(ba::AD.ForwardDiffBackend, f, xs...)
     return function pushforward(vs)
         if length(xs) == 1
             v = vs isa Tuple ? only(vs) : vs

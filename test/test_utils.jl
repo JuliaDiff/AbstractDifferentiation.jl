@@ -150,8 +150,8 @@ function test_hessians(backend; multiple_inputs=false, test_types=true)
     else
         # explicit test that AbstractDifferentiation throws an error
         # don't support tuple of Hessians
-        @test_throws AssertionError H1 = AD.hessian(backend, fgrad, (xvec, yvec))
-        @test_throws MethodError H1 = AD.hessian(backend, fgrad, xvec, yvec)
+        @test_throws ArgumentError AD.hessian(backend, fgrad, (xvec, yvec))
+        @test_throws MethodError AD.hessian(backend, fgrad, xvec, yvec)
     end
    
     # @test dfgraddxdx(xvec,yvec) ≈ H1[1] atol=1e-10

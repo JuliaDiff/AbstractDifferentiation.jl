@@ -506,16 +506,16 @@ macro primitive(expr)
 end
 
 function define_pushforward_function_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.pushforward_function)
+    fdef[:name] = :($(AbstractDifferentiation).pushforward_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function AbstractDifferentiation.jacobian($(args...),)
-            identity_like = AbstractDifferentiation.identity_matrix_like($(args[3:end]...),)
-            pff = AbstractDifferentiation.pushforward_function($(args...),)
+        function $(AbstractDifferentiation).jacobian($(args...),)
+            identity_like = $(identity_matrix_like)($(args[3:end]...),)
+            pff = $(pushforward_function)($(args...),)
             if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix, Number}}}
                 return map(identity_like) do identity_like_i
-                    return mapreduce(hcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                    return mapreduce(hcat, $(_eachcol).(identity_like_i)...) do (cols...)
                         pff(cols)
                     end
                 end
@@ -542,17 +542,17 @@ function define_pushforward_function_and_friends(fdef)
 end
 
 function define_pullback_function_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.pullback_function)
+    fdef[:name] = :($(AbstractDifferentiation).pullback_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function AbstractDifferentiation.jacobian($(args...),)
-            value_and_pbf = AbstractDifferentiation.value_and_pullback_function($(args...),)
+        function $(AbstractDifferentiation).jacobian($(args...),)
+            value_and_pbf = $(value_and_pullback_function)($(args...),)
             value, _ = value_and_pbf(nothing)
-            identity_like = AbstractDifferentiation.identity_matrix_like(value)
+            identity_like = $(identity_matrix_like)(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
-                    return mapreduce(vcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                    return mapreduce(vcat, $(_eachcol).(identity_like_i)...) do (cols...)
                         value_and_pbf(cols)[2]'
                     end
                 end
@@ -575,12 +575,12 @@ _eachcol(a::Number) = (a,)
 _eachcol(a) = eachcol(a)
 
 function define_jacobian_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.jacobian)
+    fdef[:name] = :($(AbstractDifferentiation).jacobian)
     return ExprTools.combinedef(fdef)
 end
 
 function define_primal_value(fdef)
-    fdef[:name] = :(AbstractDifferentiation.primal_value)
+    fdef[:name] = :($(AbstractDifferentiation).primal_value)
     return ExprTools.combinedef(fdef)
 end
 
