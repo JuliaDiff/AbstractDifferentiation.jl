@@ -620,7 +620,6 @@ end
 @inline asarray(x) = [x]
 @inline asarray(x::AbstractArray) = x
 
-include("ruleconfig.jl")
 include("backends.jl")
 
 # TODO: Replace with proper version
