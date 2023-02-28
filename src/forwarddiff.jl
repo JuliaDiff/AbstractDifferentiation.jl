@@ -1,4 +1,4 @@
-using .ForwardDiff: ForwardDiff, DiffResults, StaticArrays
+using .ForwardDiff: ForwardDiff, DiffResults
 
 """
     ForwardDiffBackend{CS}
