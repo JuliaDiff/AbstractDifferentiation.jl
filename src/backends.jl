@@ -47,7 +47,19 @@ AD backend that uses reverse mode with Tracker.jl.
 """
 struct TrackerBackend <: AbstractReverseMode end
 
-@static if VERSION >= v"1.6"
+
+"""
+    ReverseRuleConfigBackend
+
+AD backend that uses reverse mode with any ChainRules-compatible reverse-mode AD package.
+
+!!! note
+    To be able to use this backend, you have to load ChainRulesCore.
+"""
+struct ReverseRuleConfigBackend{RC} <: AbstractReverseMode
+    ruleconfig::RC
+end
+
 """
     ZygoteBackend()
 
@@ -59,4 +71,3 @@ It is a special case of [`ReverseRuleConfigBackend`](@ref).
     To be able to use this backend, you have to load Zygote.
 """
 function ZygoteBackend end
-end

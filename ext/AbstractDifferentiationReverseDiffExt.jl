@@ -2,12 +2,11 @@ module AbstractDifferentiationReverseDiffExt
 
 using AbstractDifferentiation: AbstractDifferentiation, asarray, EXTENSIONS_SUPPORTED, ReverseDiffBackend
 if EXTENSIONS_SUPPORTED
-    using ReverseDiff: ReverseDiff, DiffResults
+    using DiffResults: DiffResults
+    using ReverseDiff: ReverseDiff
 else
-    using ..ReverseDiff: ReverseDiff, DiffResults
-end
-if VERSION < v"1.4.0-DEV.142"
-    using Compat: only
+    using ..DiffResults: DiffResults
+    using ..ReverseDiff: ReverseDiff
 end
 
 const AD = AbstractDifferentiation

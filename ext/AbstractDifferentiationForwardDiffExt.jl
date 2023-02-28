@@ -2,12 +2,11 @@ module AbstractDifferentiationForwardDiffExt
 
 using AbstractDifferentiation: AbstractDifferentiation, asarray, EXTENSIONS_SUPPORTED, ForwardDiffBackend
 if EXTENSIONS_SUPPORTED
-    using ForwardDiff: ForwardDiff, DiffResults
+    using DiffResults: DiffResults
+    using ForwardDiff: ForwardDiff
 else
-    using ..ForwardDiff: ForwardDiff, DiffResults
-end
-if VERSION < v"1.4.0-DEV.142"
-    using Compat: only
+    using ..DiffResults: DiffResults
+    using ..ForwardDiff: ForwardDiff
 end
 
 const AD = AbstractDifferentiation

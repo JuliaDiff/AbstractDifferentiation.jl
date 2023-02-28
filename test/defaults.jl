@@ -216,10 +216,8 @@ end
             # Zygote over Zygote problems
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_hessians(backends)
-            if VERSION >= v"1.3"
-                backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
-                test_hessians(backends)
-            end
+            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            test_hessians(backends)
             # fails:
             # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
             # test_hessians(backends)
@@ -243,10 +241,8 @@ end
             # Zygote over Zygote problems
             backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
             test_lazy_hessians(backends)
-            if VERSION >= v"1.3"
-                backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
-                test_lazy_hessians(backends)
-            end
+            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            test_lazy_hessians(backends)
         end
     end
 end
