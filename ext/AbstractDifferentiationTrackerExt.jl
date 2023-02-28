@@ -7,7 +7,7 @@ else
     using ..Tracker: Tracker
 end
 
-function AD.second_lowest(::TrackerBackend)
+function AD.second_lowest(::AD.TrackerBackend)
     return throw(ArgumentError("Tracker backend does not support nested differentiation."))
 end
 
