@@ -17,7 +17,7 @@ struct HigherOrderBackend{B} <: AbstractBackend
 end
 reduce_order(b::AbstractBackend) = b
 function reduce_order(b::HigherOrderBackend)
-    if length(b.backends)==1 
+    if length(b.backends)==1
         return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
     else
         return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
@@ -48,7 +48,7 @@ function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
-function jacobian(ab::HigherOrderBackend, f, xs...) 
+function jacobian(ab::HigherOrderBackend, f, xs...)
     jacobian(lowest(ab), f, xs...)
 end
 
@@ -193,7 +193,7 @@ function value_and_pushforward_function(
 )
     return (ds) -> begin
         if !(ds isa Tuple)
-            ds = (ds,)    
+            ds = (ds,)
         end
         @assert length(ds) == length(xs)
         local value
@@ -210,7 +210,7 @@ function value_and_pushforward_function(
             end
             return vs
         end, xs...)(ds)
-        
+
         return value, pf
     end
 end
@@ -293,14 +293,14 @@ end
 
 function Base.:*(d::LazyDerivative, y::Union{Number,Tuple})
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     return derivative(d.backend, d.f, d.xs...) .* y
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyDerivative)
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     return y .* derivative(d.backend, d.f, d.xs...)
 end
@@ -324,7 +324,7 @@ Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
 function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     if d.xs isa Tuple
         return gradient(d.backend, d.f, d.xs...) .* y
@@ -335,7 +335,7 @@ end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     if d.xs isa Tuple
         return y .* gradient(d.backend, d.f, d.xs...)
@@ -540,7 +540,7 @@ function define_pushforward_function_and_friends(fdef)
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
                 ret = hcat.(mapslices(identity_like[1], dims=1) do cols
-                    # cols loop over basis states   
+                    # cols loop over basis states
                     pf = pff((cols,))
                     if typeof(pf) <: AbstractVector
                         # to make the hcat. work / get correct matrix-like, non-flat output dimension
@@ -583,7 +583,7 @@ function define_pullback_function_and_friends(fdef)
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for Hessian computation:
                 # value is a (grad,). Then, identity_like is a (matrix,).
-                # cols loops over columns of the matrix  
+                # cols loops over columns of the matrix
                 return vcat.(mapslices(identity_like[1], dims=1) do cols
                     adjoint.(value_and_pbf((cols,))[2])
                 end ...)

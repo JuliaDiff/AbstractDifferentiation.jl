@@ -60,9 +60,9 @@ AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
             return (ForwardDiff.jacobian(f, xs),)
         end
     elseif xs isa Tuple
-        error(typeof(xs))      
+        error(typeof(xs))
     else
-        error(typeof(xs)) 
+        error(typeof(xs))
     end
 end
 AD.primal_value(::ForwardDiffBackend1, ::Any, f, xs) = ForwardDiff.value.(f(xs...))

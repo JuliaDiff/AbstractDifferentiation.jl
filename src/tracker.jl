@@ -18,7 +18,7 @@ primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
 @primitive function pullback_function(ba::TrackerBackend, f, xs...)
     value, back = Tracker.forward(f, xs...)
     function pullback(ws)
-        if ws isa Tuple && !(value isa Tuple) 
+        if ws isa Tuple && !(value isa Tuple)
             @assert length(ws) == 1
             map(Tracker.data, back(ws[1]))
         else

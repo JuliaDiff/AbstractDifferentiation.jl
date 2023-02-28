@@ -47,11 +47,11 @@ function test_higher_order_backend(backends...)
     ADbackends = AD.HigherOrderBackend(backends)
     @test backends[end] == AD.lowest(ADbackends)
     @test backends[end-1] == AD.second_lowest(ADbackends)
-    
+
     for i in length(backends):-1:1
         @test backends[i] == AD.lowest(ADbackends)
-        ADbackends = AD.reduce_order(ADbackends)       
-    end    
+        ADbackends = AD.reduce_order(ADbackends)
+    end
     backends[1] == AD.reduce_order(ADbackends)
 end
 
@@ -131,7 +131,7 @@ function test_jacobians(backend; multiple_inputs=true, test_types=true)
         @test valvec == fjac(xvec, yvec)
         @test norm.(jac2 .- jac1) == (0, 0)
     end
-    
+
     # test if single input (no tuple works)
     valveca, jaca = AD.value_and_jacobian(backend, x -> fjac(x, yvec), xvec)
     valvecb, jacb = AD.value_and_jacobian(backend, y -> fjac(xvec, y), yvec)
@@ -151,7 +151,7 @@ end
 
 function test_hessians(backend; multiple_inputs=false, test_types=true)
     if multiple_inputs
-        # ... but 
+        # ... but
         error("multiple_inputs=true is not supported.")
     else
         # explicit test that AbstractDifferentiation throws an error
@@ -159,7 +159,7 @@ function test_hessians(backend; multiple_inputs=false, test_types=true)
         @test_throws AssertionError H1 = AD.hessian(backend, fgrad, (xvec, yvec))
         @test_throws MethodError H1 = AD.hessian(backend, fgrad, xvec, yvec)
     end
-   
+
     # @test dfgraddxdx(xvec,yvec) ≈ H1[1] atol=1e-10
     # @test dfgraddydy(xvec,yvec) ≈ H1[2] atol=1e-10
 
@@ -188,7 +188,7 @@ function test_hessians(backend; multiple_inputs=false, test_types=true)
     @test valscalar == fgrad(xvec, yvec)
     @test norm.(grad .- AD.gradient(backend, fhess, xvec)) == (0,)
     @test norm.(hess3 .- hess1) == (0,)
-    
+
     @test xvec == xvec2
     @test yvec == yvec2
     fhess2 = x -> dfgraddx(x, yvec)
@@ -213,10 +213,10 @@ function test_jvp(backend; multiple_inputs=true, vaugmented=false, rng=Random.GL
             ((valvec1, pf2x), (valvec2, pf2y)) = map(v->AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v), vaug)
         else
             pf1 = AD.pushforward_function(backend, fjac, xvec, yvec)(v)
-            valvec, pf2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v) 
+            valvec, pf2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v)
             ((valvec1, pf2x), (valvec2, pf2y)) = (valvec, pf2[1]), (valvec, pf2[2])
         end
-       
+
         if test_types
             @test valvec1 isa Vector{Float64}
             @test valvec2 isa Vector{Float64}
@@ -291,7 +291,7 @@ function test_lazy_derivatives(backend; multiple_inputs=true)
     @test lazyder*yscalar == der1.*yscalar
     @test lazyder*yscalar isa Tuple
 
-    @test yscalar*lazyder == yscalar.*der1 
+    @test yscalar*lazyder == yscalar.*der1
     @test yscalar*lazyder isa Tuple
 
     # multiplication with array
@@ -331,7 +331,7 @@ function test_lazy_derivatives(backend; multiple_inputs=true)
         @test_throws AssertionError lazyder*(yscalar,)
         @test_throws AssertionError lazyder*(yvec,)
 
-        @test_throws AssertionError (yscalar,)*lazyder 
+        @test_throws AssertionError (yscalar,)*lazyder
         @test_throws AssertionError (yvec,)*lazyder
     end
 end
