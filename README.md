@@ -1,6 +1,6 @@
 # AbstractDifferentiation
 
-[![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions?query=workflow%3ACI)
+[![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl)
 
 ## Motivation
@@ -15,12 +15,6 @@ To load `AbstractDifferentiation`, it is recommended to use
 ```julia
 import AbstractDifferentiation as AD
 ```
-on Julia ≥ 1.6 and
-```julia
-import AbstractDifferentiation
-const AD = AbstractDifferentiation
-```
-on older Julia versions.
 With the `AD` alias you can access names inside of `AbstractDifferentiation` using `AD.<>` instead of typing the long name `AbstractDifferentiation`.
 
 ## `AbstractDifferentiation` backends

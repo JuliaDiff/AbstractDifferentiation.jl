@@ -39,8 +39,7 @@ AD.@primitive function pullback_function(ab::FDMBackend3, f, xs...)
         if vs isa AbstractVector
             return FDM.j′vp(ab.alg, f, vs, xs...)
         else
-            @assert length(vs) == 1
-            return FDM.j′vp(ab.alg, f, vs[1], xs...)
+            return FDM.j′vp(ab.alg, f, only(vs), xs...)
         end
     end
 end
@@ -98,8 +97,7 @@ AD.@primitive function pullback_function(ab::ZygoteBackend1, f, xs...)
         if vs isa AbstractVector
             back(vs)
         else
-            @assert length(vs) == 1
-            back(vs[1])
+            back(only(vs))
         end
     end
 end

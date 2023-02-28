@@ -50,8 +50,7 @@ end
 function hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     return jacobian(second_lowest(ab), x -> begin
         gradient(lowest(ab), f, x)[1] # gradient returns a tuple
@@ -87,8 +86,7 @@ end
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
 
     local value
@@ -110,8 +108,7 @@ end
 function value_and_hessian(ab::HigherOrderBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -128,8 +125,7 @@ end
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -146,8 +142,7 @@ end
 function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -174,8 +169,7 @@ function pushforward_function(
                 newxs = xs .+ ds .* xds
                 return f(newxs...)
             else
-                @assert length(xs) == length(xds) == 1
-                newx = xs[1] + ds * xds[1]
+                newx = only(xs) + ds * only(xds)
                 return f(newx)
             end
         end, _zero.(xs, ds)...)
@@ -219,8 +213,7 @@ _zero(::Any, d::Any) = zero(d)
 
 @inline _dot(x, y) = dot(x, y)
 @inline function _dot(x::AbstractVector, y::UniformScaling)
-    @assert length(x) == 1
-    return @inbounds dot(x[1], y.λ)
+    return @inbounds dot(only(x), y.λ)
 end
 @inline function _dot(x::AbstractVector, y::AbstractMatrix)
     @assert size(y, 2) == 1
