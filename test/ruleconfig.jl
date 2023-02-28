@@ -1,9 +1,9 @@
 using AbstractDifferentiation
 using Test
-using Zygote
+using Zygote, Yota
 
 @testset "ReverseRuleConfigBackend(ZygoteRuleConfig())" begin
-    backends = [@inferred(AD.ZygoteBackend())]
+    backends = [@inferred(AD.ZygoteBackend()), @inferred(AD.YotaBackend())]
     @testset for backend in backends
         @testset "Derivative" begin
             test_derivatives(backend)

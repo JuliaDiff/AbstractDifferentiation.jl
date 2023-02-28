@@ -9,6 +9,7 @@ Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 ExprTools = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ChainRulesCore = "1"
@@ -26,7 +27,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
+Yota = "cd998857-8626-517d-b929-70ad188a48f0"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Test", "FiniteDifferences", "ForwardDiff", "Random", "ReverseDiff", "Tracker", "Zygote"]
+test = ["Test", "FiniteDifferences", "ForwardDiff", "Random", "ReverseDiff", "Tracker", "Yota", "Zygote"]
