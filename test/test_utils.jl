@@ -16,13 +16,7 @@ dfgraddydy(x, y) = zeros(length(y),length(y))
 function fjac(x, y)
     x + -3*y + [y[2:end];zero(y[end])]/2# Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U) * y
 end
-function dfjacdx(x, y)
-    if VERSION < v"1.3"
-        return Matrix{Float64}(I, length(x), length(x))
-    else
-        return I(length(x))
-    end
-end
+dfjacdx(x, y) = I(length(x))
 dfjacdy(x, y) = Bidiagonal(-ones(length(y)) * 3, ones(length(y) - 1) / 2, :U)
 
 # Jvp
@@ -156,8 +150,8 @@ function test_hessians(backend; multiple_inputs=false, test_types=true)
     else
         # explicit test that AbstractDifferentiation throws an error
         # don't support tuple of Hessians
-        @test_throws AssertionError H1 = AD.hessian(backend, fgrad, (xvec, yvec))
-        @test_throws MethodError H1 = AD.hessian(backend, fgrad, xvec, yvec)
+        @test_throws ArgumentError AD.hessian(backend, fgrad, (xvec, yvec))
+        @test_throws MethodError AD.hessian(backend, fgrad, xvec, yvec)
     end
    
     # @test dfgraddxdx(xvec,yvec) ≈ H1[1] atol=1e-10

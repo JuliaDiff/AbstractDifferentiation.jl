@@ -1,11 +1,6 @@
 module AbstractDifferentiation
 
-using LinearAlgebra, ExprTools, Requires, Compat
-using ChainRulesCore: ChainRulesCore
-
-export AD
-
-const AD = AbstractDifferentiation
+using LinearAlgebra, ExprTools
 
 abstract type AbstractBackend end
 abstract type AbstractFiniteDifference <: AbstractBackend end
@@ -55,8 +50,7 @@ end
 function hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     return jacobian(second_lowest(ab), x -> begin
         gradient(lowest(ab), f, x)[1] # gradient returns a tuple
@@ -92,8 +86,7 @@ end
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
 
     local value
@@ -115,8 +108,7 @@ end
 function value_and_hessian(ab::HigherOrderBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -133,8 +125,7 @@ end
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -151,8 +142,7 @@ end
 function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
-        @assert length(x) == 1
-        x = x[1]
+        x = only(x)
     end
     local value
     primalcalled = false
@@ -179,8 +169,7 @@ function pushforward_function(
                 newxs = xs .+ ds .* xds
                 return f(newxs...)
             else
-                @assert length(xs) == length(xds) == 1
-                newx = xs[1] + ds * xds[1]
+                newx = only(xs) + ds * only(xds)
                 return f(newx)
             end
         end, _zero.(xs, ds)...)
@@ -224,8 +213,7 @@ _zero(::Any, d::Any) = zero(d)
 
 @inline _dot(x, y) = dot(x, y)
 @inline function _dot(x::AbstractVector, y::UniformScaling)
-    @assert length(x) == 1
-    return @inbounds dot(x[1], y.λ)
+    return @inbounds dot(only(x), y.λ)
 end
 @inline function _dot(x::AbstractVector, y::AbstractMatrix)
     @assert size(y, 2) == 1
@@ -518,24 +506,18 @@ macro primitive(expr)
 end
 
 function define_pushforward_function_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.pushforward_function)
+    fdef[:name] = :($(AbstractDifferentiation).pushforward_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function AbstractDifferentiation.jacobian($(args...),)
-            identity_like = AbstractDifferentiation.identity_matrix_like($(args[3:end]...),)
-            pff = AbstractDifferentiation.pushforward_function($(args...),)
+        function $(AbstractDifferentiation).jacobian($(args...),)
+            identity_like = $(identity_matrix_like)($(args[3:end]...),)
+            pff = $(pushforward_function)($(args...),)
             if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix, Number}}}
                 return map(identity_like) do identity_like_i
-                    if VERSION < v"1.3"
-                        return reduce(hcat, map(AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
-                            pff(cols)
-                        end)
-                    else
-                    return mapreduce(hcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                    return mapreduce(hcat, $(_eachcol).(identity_like_i)...) do (cols...)
                         pff(cols)
                     end
-                end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
@@ -560,24 +542,18 @@ function define_pushforward_function_and_friends(fdef)
 end
 
 function define_pullback_function_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.pullback_function)
+    fdef[:name] = :($(AbstractDifferentiation).pullback_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function AbstractDifferentiation.jacobian($(args...),)
-            value_and_pbf = AbstractDifferentiation.value_and_pullback_function($(args...),)
+        function $(AbstractDifferentiation).jacobian($(args...),)
+            value_and_pbf = $(value_and_pullback_function)($(args...),)
             value, _ = value_and_pbf(nothing)
-            identity_like = AbstractDifferentiation.identity_matrix_like(value)
+            identity_like = $(identity_matrix_like)(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
-                    if VERSION < v"1.3"
-                        return reduce(vcat, map(AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
-                            value_and_pbf(cols)[2]'
-                        end)
-                    else
-                    return mapreduce(vcat, AbstractDifferentiation._eachcol.(identity_like_i)...) do (cols...)
+                    return mapreduce(vcat, $(_eachcol).(identity_like_i)...) do (cols...)
                         value_and_pbf(cols)[2]'
-                        end
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
@@ -599,12 +575,12 @@ _eachcol(a::Number) = (a,)
 _eachcol(a) = eachcol(a)
 
 function define_jacobian_and_friends(fdef)
-    fdef[:name] = :(AbstractDifferentiation.jacobian)
+    fdef[:name] = :($(AbstractDifferentiation).jacobian)
     return ExprTools.combinedef(fdef)
 end
 
 function define_primal_value(fdef)
-    fdef[:name] = :(AbstractDifferentiation.primal_value)
+    fdef[:name] = :($(AbstractDifferentiation).primal_value)
     return ExprTools.combinedef(fdef)
 end
 
@@ -644,16 +620,23 @@ end
 @inline asarray(x) = [x]
 @inline asarray(x::AbstractArray) = x
 
-include("ruleconfig.jl")
-function __init__()
-    @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("forwarddiff.jl")
-    @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("reversediff.jl")
-    @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("finitedifferences.jl")
-    @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("tracker.jl")
-    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
-        @static if VERSION >= v"1.6"
-            ZygoteBackend() = ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
+include("backends.jl")
+
+# TODO: Replace with proper version
+const EXTENSIONS_SUPPORTED = isdefined(Base, :get_extension)
+if !EXTENSIONS_SUPPORTED
+   using Requires: @require
+   include("../ext/AbstractDifferentiationChainRulesCoreExt.jl")
+end
+@static if !EXTENSIONS_SUPPORTED
+    function __init__()
+        @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
+            @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("../ext/AbstractDifferentiationForwardDiffExt.jl")
+            @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("../ext/AbstractDifferentiationReverseDiffExt.jl")
         end
+        @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("../ext/AbstractDifferentiationFiniteDifferencesExt.jl")
+        @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("../ext/AbstractDifferentiationTrackerExt.jl")
+        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/AbstractDifferentiationZygoteExt.jl")
     end
 end
 
