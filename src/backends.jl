@@ -71,4 +71,4 @@ It is a special case of [`ReverseRuleConfigBackend`](@ref).
 !!! note
     To be able to use this backend, you have to load Zygote.
 """
-function ZygoteBackend end
+struct ZygoteBackend <: AbstractReverseMode end
