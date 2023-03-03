@@ -61,6 +61,11 @@ struct ReverseRuleConfigBackend{RC} <: AbstractReverseMode
     ruleconfig::RC
 end
 
+# internal function for extracting the rule config
+# falls back to returning the wrapped `ruleconfig` but can be specialized
+# e.g., for Zygote to fix #69
+ruleconfig(ba::ReverseRuleConfigBackend) = ba.ruleconfig
+
 """
     ZygoteBackend()
 

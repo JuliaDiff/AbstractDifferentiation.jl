@@ -24,7 +24,7 @@ AbstractDifferentiationFiniteDifferencesExt = "FiniteDifferences"
 AbstractDifferentiationForwardDiffExt = ["DiffResults", "ForwardDiff"]
 AbstractDifferentiationReverseDiffExt = ["DiffResults", "ReverseDiff"]
 AbstractDifferentiationTrackerExt = "Tracker"
-AbstractDifferentiationZygoteExt = ["ChainRulesCore", "Zygote"]
+AbstractDifferentiationZygoteExt = "Zygote"
 
 [compat]
 ChainRulesCore = "1"
