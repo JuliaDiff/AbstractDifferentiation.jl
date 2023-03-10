@@ -1,9 +1,10 @@
 module AbstractDifferentiationTrackerExt
 
-import AbstractDifferentiation as AD
-if AD.EXTENSIONS_SUPPORTED
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
     using Tracker: Tracker
 else
+    import ..AbstractDifferentiation as AD
     using ..Tracker: Tracker
 end
 

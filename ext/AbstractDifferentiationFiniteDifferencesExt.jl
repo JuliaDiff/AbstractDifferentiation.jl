@@ -1,9 +1,10 @@
 module AbstractDifferentiationFiniteDifferencesExt
 
-import AbstractDifferentiation as AD
-if AD.EXTENSIONS_SUPPORTED
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
     using FiniteDifferences: FiniteDifferences
 else
+    import ..AbstractDifferentiation as AD
     using ..FiniteDifferences: FiniteDifferences
 end
 
