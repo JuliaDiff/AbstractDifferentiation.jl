@@ -1,10 +1,11 @@
 module AbstractDifferentiationReverseDiffExt
 
-import AbstractDifferentiation as AD
-if AD.EXTENSIONS_SUPPORTED
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
     using DiffResults: DiffResults
     using ReverseDiff: ReverseDiff
 else
+    import ..AbstractDifferentiation as AD
     using ..DiffResults: DiffResults
     using ..ReverseDiff: ReverseDiff
 end

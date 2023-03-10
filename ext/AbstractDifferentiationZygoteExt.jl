@@ -1,9 +1,10 @@
 module AbstractDifferentiationZygoteExt
 
-import AbstractDifferentiation as AD
-if AD.EXTENSIONS_SUPPORTED
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
     using Zygote: Zygote
 else
+    import ..AbstractDifferentiation as AD
     using ..Zygote: Zygote
 end
 

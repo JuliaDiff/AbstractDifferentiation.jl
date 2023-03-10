@@ -1,10 +1,11 @@
 module AbstractDifferentiationForwardDiffExt
 
-import AbstractDifferentiation as AD
-if AD.EXTENSIONS_SUPPORTED
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
     using DiffResults: DiffResults
     using ForwardDiff: ForwardDiff
 else
+    import ..AbstractDifferentiation as AD
     using ..DiffResults: DiffResults
     using ..ForwardDiff: ForwardDiff
 end
