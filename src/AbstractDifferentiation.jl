@@ -637,6 +637,7 @@ end
         @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("../ext/AbstractDifferentiationFiniteDifferencesExt.jl")
         @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("../ext/AbstractDifferentiationTrackerExt.jl")
         @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/AbstractDifferentiationZygoteExt.jl")
+        @require Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9" include("../ext/AbstractDifferentiationEnzymeExt.jl")
     end
 end
 
