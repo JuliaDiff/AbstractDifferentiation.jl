@@ -7,7 +7,7 @@ backends = [
     "EnzymeReverseBackend" => AD.EnzymeReverseBackend(),
 ]
 
-@testset name for (name, backend) in backends
+@testset "$name" for (name, backend) in backends
     if name == "EnzymeForwardBackend"
         @test backend isa AD.AbstractForwardMode
     else
