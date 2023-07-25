@@ -1,4 +1,5 @@
 using AbstractDifferentiation
+using ChainRulesCore
 using Test
 using Zygote
 
@@ -51,5 +52,17 @@ using Zygote
            r[]
         end
         @test AD.jacobian(ad, f, [1, 2, 3], 3) == ([6.0 0.0 0.0; 0.0 6.0 0.0; 0.0 0.0 6.0], [2.0, 4.0, 6.0])
+    end
+
+    # issue #57
+    @testset "primal computation in rrule" begin
+        function myfunc(x)
+            @info "This should not be logged if I have an rrule"
+            x
+        end
+        ChainRulesCore.rrule(::typeof(myfunc), x) = (x, (y -> (NoTangent(), y)))
+
+        @test_logs Zygote.gradient(myfunc, 1) # nothing is logged
+        @test_logs AD.derivative(AD.ZygoteBackend(), myfunc, 1) # nothing is logged
     end
 end
