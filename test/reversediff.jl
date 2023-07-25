@@ -1,15 +1,10 @@
 using AbstractDifferentiation
 using Test
-using ForwardDiff
+using ReverseDiff
 
-@testset "ForwardDiffBackend" begin
-    backends = [
-        @inferred(AD.ForwardDiffBackend())
-        @inferred(AD.ForwardDiffBackend(; chunksize=Val{1}()))
-    ]
+@testset "ReverseDiffBackend" begin
+    backends = [@inferred(AD.ReverseDiffBackend())]
     @testset for backend in backends
-        @test backend isa AD.AbstractForwardMode
-
         @testset "Derivative" begin
             test_derivatives(backend)
         end
@@ -23,7 +18,7 @@ using ForwardDiff
             test_hessians(backend)
         end
         @testset "jvp" begin
-            test_jvp(backend; vaugmented=true)
+            test_jvp(backend)
         end
         @testset "j′vp" begin
             test_j′vp(backend)
@@ -35,7 +30,7 @@ using ForwardDiff
             test_lazy_gradients(backend)
         end
         @testset "Lazy Jacobian" begin
-            test_lazy_jacobians(backend; vaugmented=true)
+            test_lazy_jacobians(backend)
         end
         @testset "Lazy Hessian" begin
             test_lazy_hessians(backend)

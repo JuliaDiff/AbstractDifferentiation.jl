@@ -5,4 +5,8 @@ using Test
     include("test_utils.jl")
     include("defaults.jl")
     include("forwarddiff.jl")
+    include("reversediff.jl")
+    include("finitedifferences.jl")
+    include("tracker.jl")
+    include("ruleconfig.jl")
 end

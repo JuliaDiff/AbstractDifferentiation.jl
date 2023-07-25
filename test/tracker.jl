@@ -1,15 +1,18 @@
 using AbstractDifferentiation
 using Test
-using ForwardDiff
+using Tracker
 
-@testset "ForwardDiffBackend" begin
-    backends = [
-        @inferred(AD.ForwardDiffBackend())
-        @inferred(AD.ForwardDiffBackend(; chunksize=Val{1}()))
-    ]
+@testset "TrackerBackend" begin
+    backends = [@inferred(AD.TrackerBackend())]
     @testset for backend in backends
-        @test backend isa AD.AbstractForwardMode
-
+        @testset "errors when nested" begin
+            @test_throws ArgumentError AD.second_lowest(backend)
+            @test_throws ArgumentError AD.hessian(backend, sum, randn(3))
+        end
+        @testset "primal_value for array of tracked reals" begin
+            @test AD.primal_value([Tracker.TrackedReal(1.0)]) isa Vector{Float64}
+            @test AD.primal_value(fill(Tracker.TrackedReal(1.0), 1, 1)) isa Matrix{Float64}
+        end
         @testset "Derivative" begin
             test_derivatives(backend)
         end
@@ -19,11 +22,8 @@ using ForwardDiff
         @testset "Jacobian" begin
             test_jacobians(backend)
         end
-        @testset "Hessian" begin
-            test_hessians(backend)
-        end
         @testset "jvp" begin
-            test_jvp(backend; vaugmented=true)
+            test_jvp(backend)
         end
         @testset "j′vp" begin
             test_j′vp(backend)
@@ -35,10 +35,7 @@ using ForwardDiff
             test_lazy_gradients(backend)
         end
         @testset "Lazy Jacobian" begin
-            test_lazy_jacobians(backend; vaugmented=true)
-        end
-        @testset "Lazy Hessian" begin
-            test_lazy_hessians(backend)
+            test_lazy_jacobians(backend)
         end
     end
 end

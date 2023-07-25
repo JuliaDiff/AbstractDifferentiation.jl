@@ -1,16 +1,14 @@
-using .ForwardDiff: ForwardDiff, DiffResults, StaticArrays
+module AbstractDifferentiationForwardDiffExt
 
-"""
-    ForwardDiffBackend{CS}
-
-AD backend that uses forward mode with ForwardDiff.jl.
-
-The type parameter `CS` denotes the chunk size of the differentiation algorithm. If it is
-`Nothing`, then ForwardiffDiff uses a heuristic to set the chunk size based on the input.
-
-See also: [ForwardDiff.jl: Configuring Chunk Size](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Configuring-Chunk-Size)
-"""
-struct ForwardDiffBackend{CS} <: AbstractBackend end
+if isdefined(Base, :get_extension)
+    import AbstractDifferentiation as AD
+    using DiffResults: DiffResults
+    using ForwardDiff: ForwardDiff
+else
+    import ..AbstractDifferentiation as AD
+    using ..DiffResults: DiffResults
+    using ..ForwardDiff: ForwardDiff
+end
 
 """
     ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
@@ -23,11 +21,11 @@ ForwarddDiff uses a heuristic to set the chunk size based on the input. Alternat
 
 See also: [ForwardDiff.jl: Configuring Chunk Size](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Configuring-Chunk-Size)
 """
-function ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
-    return ForwardDiffBackend{getchunksize(chunksize)}()
+function AD.ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
+    return AD.ForwardDiffBackend{getchunksize(chunksize)}()
 end
 
-@primitive function pushforward_function(ba::ForwardDiffBackend, f, xs...)
+AD.@primitive function pushforward_function(ba::AD.ForwardDiffBackend, f, xs...)
     return function pushforward(vs)
         if length(xs) == 1
             v = vs isa Tuple ? only(vs) : vs
@@ -38,34 +36,35 @@ end
     end
 end
 
-primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+AD.primal_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+AD.primal_value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 
 # these implementations are more efficient than the fallbacks
 
-function gradient(ba::ForwardDiffBackend, f, x::AbstractArray)
+function AD.gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     cfg = ForwardDiff.GradientConfig(f, x, chunk(ba, x))
     return (ForwardDiff.gradient(f, x, cfg),)
 end
 
-function jacobian(ba::ForwardDiffBackend, f, x::AbstractArray)
-    cfg = ForwardDiff.JacobianConfig(asarray ∘ f, x, chunk(ba, x))
-    return (ForwardDiff.jacobian(asarray ∘ f, x, cfg),)
+function AD.jacobian(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
+    cfg = ForwardDiff.JacobianConfig(AD.asarray ∘ f, x, chunk(ba, x))
+    return (ForwardDiff.jacobian(AD.asarray ∘ f, x, cfg),)
 end
-jacobian(::ForwardDiffBackend, f, x::Number) = (ForwardDiff.derivative(f, x),)
+AD.jacobian(::AD.ForwardDiffBackend, f, x::Number) = (ForwardDiff.derivative(f, x),)
 
-function hessian(ba::ForwardDiffBackend, f, x::AbstractArray)
+function AD.hessian(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     cfg = ForwardDiff.HessianConfig(f, x, chunk(ba, x))
     return (ForwardDiff.hessian(f, x, cfg),)
 end
 
-function value_and_gradient(ba::ForwardDiffBackend, f, x::AbstractArray)
+function AD.value_and_gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     result = DiffResults.GradientResult(x)
     cfg = ForwardDiff.GradientConfig(f, x, chunk(ba, x))
     ForwardDiff.gradient!(result, f, x, cfg)
     return DiffResults.value(result), (DiffResults.derivative(result),)
 end
 
-function value_and_hessian(ba::ForwardDiffBackend, f, x)
+function AD.value_and_hessian(ba::AD.ForwardDiffBackend, f, x)
     result = DiffResults.HessianResult(x)
     cfg = ForwardDiff.HessianConfig(f, result, x, chunk(ba, x))
     ForwardDiff.hessian!(result, f, x, cfg)
@@ -76,11 +75,10 @@ end
 # support arrays and tuples
 @noinline step_toward(x, v, h) = x .+ h .* v
 
-@inline asarray(x) = [x]
-@inline asarray(x::AbstractArray) = x
-
 getchunksize(::Nothing) = Nothing
 getchunksize(::Val{N}) where {N} = N
 
-chunk(::ForwardDiffBackend{Nothing}, x) = ForwardDiff.Chunk(x)
-chunk(::ForwardDiffBackend{N}, _) where {N} = ForwardDiff.Chunk{N}()
+chunk(::AD.ForwardDiffBackend{Nothing}, x) = ForwardDiff.Chunk(x)
+chunk(::AD.ForwardDiffBackend{N}, _) where {N} = ForwardDiff.Chunk{N}()
+
+end # module

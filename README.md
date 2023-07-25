@@ -1,6 +1,6 @@
 # AbstractDifferentiation
 
-[![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions?query=workflow%3ACI)
+[![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl)
 
 ## Motivation
@@ -11,15 +11,43 @@ Julia has more (automatic) differentiation packages than you can count on 2 hand
 
 ## Loading `AbstractDifferentiation`
 
-To load `AbstractDifferentiation`, use:
+To load `AbstractDifferentiation`, it is recommended to use
 ```julia
-using AbstractDifferentiation
+import AbstractDifferentiation as AD
 ```
-`AbstractDifferentiation` exports a single name `AD` which is just an alias for the `AbstractDifferentiation` module itself. You can use this to access names inside `AbstractDifferentiation` using `AD.<>` instead of typing the long name `AbstractDifferentiation`.
+With the `AD` alias you can access names inside of `AbstractDifferentiation` using `AD.<>` instead of typing the long name `AbstractDifferentiation`.
 
 ## `AbstractDifferentiation` backends
 
-To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`. For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`. For instance, let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend. To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`. To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
+To use `AbstractDifferentiation`, first construct a backend instance `ab::AD.AbstractBackend` using your favorite differentiation package in Julia that supports `AbstractDifferentiation`.
+In particular, you may want to use `AD.ReverseRuleConfigBackend(ruleconfig)` for any [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl)-compatible reverse mode differentiation package.
+
+The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [weak dependencies](https://pkgdocs.julialang.org/dev/creating-packages/#Weak-dependencies) on Julia ≥ 1.9 and [Requires.jl](https://github.com/JuliaPackaging/Requires.jl) on older Julia versions):
+
+- `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
+- `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
+- `AD.ReverseDiffBackend()` for [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
+- `AD.TrackerBackend()` for [Tracker.jl](https://github.com/FluxML/Tracker.jl)
+- `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl), which is a special case of `AD.ReverseRuleConfigBackend`
+
+In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
+
+Here's an example:
+
+```julia
+julia> import AbstractDifferentiation as AD, Zygote
+
+julia> ab = AD.ZygoteBackend()
+AbstractDifferentiation.ReverseRuleConfigBackend{Zygote.ZygoteRuleConfig{Zygote.Context}}(Zygote.ZygoteRuleConfig{Zygote.Context}(Zygote.Context(nothing)))
+
+julia> f(x) = log(sum(exp, x))
+f (generic function with 1 method)
+
+julia> AD.gradient(ab, f, rand(10))
+([0.07163448353282538, 0.08520350535348796, 0.09675622487503996, 0.1522744408520505, 0.12174662595572318, 0.07996969757526722, 0.07832665607158593, 0.11001685581681672, 0.06691909637037166, 0.1371524135968315],)
+```
+
+For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`. For instance, let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend. To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`. To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
 
 ## Backend-agnostic interface
 
@@ -67,3 +95,16 @@ You can also get a struct for the lazy derivative/gradient/Jacobian/Hessian of a
 - `lg = lazy_gradient(ab::AbstractBackend, f, xs...)`: returns an operator `lg` for multiplying by the gradient of `f` at `xs`. You can apply the operator by multiplication e.g. `lg * y` where `y` is a number if `f` has a single input or a tuple of the same length as `xs` if `f` has multiple inputs.
 - `lh = lazy_hessian(ab::AbstractBackend, f, x)`: returns an operator `lh` for multiplying by the Hessian of the scalar-valued function `f` at `x`. You can apply the operator by multiplication e.g. `lh * y` or `y' * lh` where `y` is a number or a vector of the appropriate length.
 - `lj = lazy_jacobian(ab::AbstractBackend, f, xs...)`: returns an operator `lj` for multiplying by the Jacobian of `f` at `xs`. You can apply the operator by multiplication e.g. `lj * y` or `y' * lj` where `y` is a number, vector or tuple of numbers and/or vectors. If `f` has multiple inputs, `y` in `lj * y` should be a tuple. If `f` has multiply outputs, `y` in `y' * lj` should be a tuple. Otherwise, it should be a scalar or a vector of the appropriate length.
+
+## Citing this package
+
+If you use this package in your work, please cite the package:
+
+```bib
+@article{schafer2021abstractdifferentiation,
+  title={AbstractDifferentiation. jl: Backend-Agnostic Differentiable Programming in Julia},
+  author={Sch{\"a}fer, Frank and Tarek, Mohamed and White, Lyndon and Rackauckas, Chris},
+  journal={NeurIPS 2021 Differentiable Programming Workshop},
+  year={2021}
+}
+```

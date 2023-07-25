@@ -1,15 +1,18 @@
 using AbstractDifferentiation
 using Test
-using ForwardDiff
+using FiniteDifferences
 
-@testset "ForwardDiffBackend" begin
+@testset "FiniteDifferencesBackend" begin
+    method = FiniteDifferences.central_fdm(6, 1)
+    # `central_fdm(5, 1)` is not type-inferrable, so only check inferrability
+    # with user-specified method
     backends = [
-        @inferred(AD.ForwardDiffBackend())
-        @inferred(AD.ForwardDiffBackend(; chunksize=Val{1}()))
+        AD.FiniteDifferencesBackend(),
+        @inferred(AD.FiniteDifferencesBackend(method)),
     ]
-    @testset for backend in backends
-        @test backend isa AD.AbstractForwardMode
+    @test backends[2].method === method
 
+    @testset for backend in backends
         @testset "Derivative" begin
             test_derivatives(backend)
         end
