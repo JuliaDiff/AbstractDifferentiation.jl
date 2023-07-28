@@ -12,7 +12,7 @@ end
 FDMBackend1() = FDMBackend1(central_fdm(5, 1))
 const fdm_backend1 = FDMBackend1()
 # Minimal interface
-AD.@primitive function jacobian(ab::FDMBackend1, f, xs...)
+function AD.jacobian(ab::FDMBackend1, f, xs...)
     return FDM.jacobian(ab.alg, f, xs...)
 end
 
@@ -49,7 +49,7 @@ end
 ## ForwardDiff
 struct ForwardDiffBackend1 <: AD.AbstractForwardMode end
 const forwarddiff_backend1 = ForwardDiffBackend1()
-AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
+function AD.jacobian(ab::ForwardDiffBackend1, f, xs)
     if xs isa Number
         return (ForwardDiff.derivative(f, xs),)
     elseif xs isa AbstractArray
