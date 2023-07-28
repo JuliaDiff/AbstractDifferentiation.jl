@@ -24,8 +24,6 @@ second_lowest(b::AbstractBackend) = b
 second_lowest(b::HigherOrderBackend) = lowest(reduce_order(b))
 
 # If the primal value is in y, extract it.
-# Otherwise, re-compute it, e.g. in finite diff.
-primal_value(::AbstractFiniteDifference, ::Any, f, xs) = f(xs...)
 primal_value(::AbstractBackend, ys, ::Any, ::Any) = primal_value(ys)
 primal_value(x::Tuple) = map(primal_value, x)
 primal_value(x) = x
@@ -68,10 +66,6 @@ end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     local value
     primalcalled = false
-    if lowest(ab) isa AbstractFiniteDifference
-        value = primal_value(ab, nothing, f, xs)
-        primalcalled = true
-    end
     jacs = jacobian(lowest(ab), (_xs...,) -> begin
         v = f(_xs...)
         if !primalcalled
@@ -91,10 +85,6 @@ function value_and_hessian(ab::AbstractBackend, f, x)
 
     local value
     primalcalled = false
-    if ab isa AbstractFiniteDifference
-        value = primal_value(ab, nothing, f, (x,))
-        primalcalled = true
-    end
     hess = jacobian(second_lowest(ab), _x -> begin
         v, g = value_and_gradient(lowest(ab), f, _x)
         if !primalcalled
@@ -187,10 +177,6 @@ function value_and_pushforward_function(
         @assert length(ds) == length(xs)
         local value
         primalcalled = false
-        if ab isa AbstractFiniteDifference
-            value = primal_value(ab, nothing, f, xs)
-            primalcalled = true
-        end
         pf = pushforward_function(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
             if !primalcalled
@@ -241,10 +227,6 @@ function value_and_pullback_function(
     return (ws) -> begin
         local value
         primalcalled = false
-        if ab isa AbstractFiniteDifference
-            value = primal_value(ab, nothing, f, xs)
-            primalcalled = true
-        end
         if ws === nothing
             vs = f(xs...)
             if !primalcalled
