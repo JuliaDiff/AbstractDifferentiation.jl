@@ -24,7 +24,7 @@ AD.@primitive function value_and_pullback_function(ba::AD.TrackerBackend, f, xs.
         else
             ws
         end
-        return map(Tracker.data, back(_ws))
+        return (value, map(Tracker.data, back(_ws)))
     end
     return value_and_pullback
 end
