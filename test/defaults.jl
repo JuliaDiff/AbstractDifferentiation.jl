@@ -39,7 +39,6 @@ AD.@primitive function value_and_pullback_function(ab::FDMBackend3, f, xs...)
         # Supports only single output
         _vs = vs isa AbstractVector ? vs : only(vs)
         return value, FDM.j′vp(ab.alg, f, _vs, xs...)
-        end
     end
 end
 ##
