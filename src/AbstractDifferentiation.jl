@@ -222,7 +222,7 @@ end
 
 function pullback_function(ab::AbstractBackend, f, xs...)
     value_and_pbf = value_and_pullback_function(ab, f, xs...)
-    return (ws) -> value_and_pbf(ws)[2]
+    return ws -> value_and_pbf(ws)[2]
 end
 function value_and_pullback_function(
     ab::AbstractBackend,
