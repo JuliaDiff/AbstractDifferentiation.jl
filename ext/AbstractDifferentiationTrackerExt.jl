@@ -17,14 +17,20 @@ AD.primal_value(x::Tracker.TrackedArray) = Tracker.data(x)
 AD.primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
 
 AD.@primitive function value_and_pullback_function(ba::AD.TrackerBackend, f, xs...)
-    value, back = Tracker.forward(f, xs...)
+    _value, back = Tracker.forward(f, xs...)
+    value = map(Tracker.data, _value)
     function value_and_pullback(ws)
-        _ws = if ws isa Tuple && !(value isa Tuple)
-            only(ws)
+        pb_value = if ws === nothing
+            nothing
         else
-            ws
+            _ws = if ws isa Tuple && !(value isa Tuple)
+                only(ws)
+            else
+                ws
+            end
+            map(Tracker.data, back(_ws))
         end
-        return (value, map(Tracker.data, back(_ws)))
+        return value, pb_value
     end
     return value_and_pullback
 end
