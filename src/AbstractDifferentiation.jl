@@ -221,35 +221,18 @@ end
 end
 
 function pullback_function(ab::AbstractBackend, f, xs...)
-    value_and_pbf = value_and_pullback_function(ab, f, xs...)
-    return ws -> value_and_pbf(ws)[2]
+    _, pbf = value_and_pullback_function(ab, f, xs...)
+    return pbf
 end
 function value_and_pullback_function(
     ab::AbstractBackend,
     f,
     xs...,
 )
-    return (ws) -> begin
-        local value
-        primalcalled = false
-        if ab isa AbstractFiniteDifference
-            value = primal_value(ab, nothing, f, xs)
-            primalcalled = true
-        end
-        if ws === nothing
-            vs = f(xs...)
-            if !primalcalled
-                value = primal_value(lowest(ab), vs, f, xs)
-                primalcalled = true
-            end
-            return value, nothing
-        end
-        pb = gradient(lowest(ab), (_xs...,) -> begin
+    value = f(xs...)
+    pbf = ws -> begin
+        return gradient(lowest(ab), (_xs...,) -> begin
             vs = f(_xs...)
-            if !primalcalled
-                value = primal_value(lowest(ab), vs, f, xs)
-                primalcalled = true
-            end
             if ws isa Tuple
                 @assert length(vs) == length(ws)
                 return sum(Base.splat(_dot), zip(ws, vs))
@@ -257,8 +240,8 @@ function value_and_pullback_function(
                 return _dot(vs, ws)
             end
         end, xs...)
-        return value, pb
     end
+    return value, pbf
 end
 
 struct LazyDerivative{B, F, X}
@@ -543,13 +526,12 @@ function define_value_and_pullback_function_and_friends(fdef)
     funcs = quote
         $(ExprTools.combinedef(fdef))
         function $(AbstractDifferentiation).jacobian($(args...),)
-            value_and_pbf = $(value_and_pullback_function)($(args...),)
-            value, _ = value_and_pbf(nothing)
+            value, pbf = $(value_and_pullback_function)($(args...),)
             identity_like = $(identity_matrix_like)(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
                     return mapreduce(vcat, $(_eachcol).(identity_like_i)...) do (cols...)
-                        value_and_pbf(cols)[2]'
+                        pbf(cols)'
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
@@ -557,10 +539,10 @@ function define_value_and_pullback_function_and_friends(fdef)
                 # value is a (grad,). Then, identity_like is a (matrix,).
                 # cols loops over columns of the matrix  
                 return vcat.(mapslices(identity_like[1], dims=1) do cols
-                    adjoint.(value_and_pbf((cols,))[2])
+                    adjoint.(pbf((cols,)))
                 end ...)
             else
-                return adjoint.(value_and_pbf(identity_like)[2])
+                return adjoint.(pbf(identity_like))
             end
         end
     end

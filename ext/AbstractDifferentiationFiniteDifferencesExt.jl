@@ -39,9 +39,10 @@ end
 # Ensure consistency with `value_and_pullback` function
 function AD.value_and_pullback_function(ba::AD.FiniteDifferencesBackend, f, xs...)
     value = f(xs...)
-    function value_and_pullback(vs)
-        return value, FiniteDifferences.j′vp(ba.method, f, vs, xs...)
+    function fd_pullback(vs)
+        return FiniteDifferences.j′vp(ba.method, f, vs, xs...)
     end
+    return value, fd_pullback
 end
 
 end # module

@@ -247,7 +247,8 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG, test_
     w = rand(rng, length(fjac(xvec, yvec)))
     if multiple_inputs
         pb1 = AD.pullback_function(backend, fjac, xvec, yvec)(w)
-        valvec, pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)(w)
+        valvec, pbf2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)
+        pb2 = pbf2(w)
 
         if test_types
             @test valvec isa Vector{Float64}
@@ -263,8 +264,10 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG, test_
         @test yvec == yvec2
     end
 
-    valvec1, pb1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)(w)
-    valvec2, pb2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)(w)
+    valvec1, pbf1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)
+    pb1 = pbf1(w)
+    valvec2, pbf2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)
+    pb2 = pbf2(w)
     if test_types
         @test valvec1 isa Vector{Float64}
         @test valvec2 isa Vector{Float64}

@@ -35,16 +35,12 @@ FDMBackend3() = FDMBackend3(central_fdm(5, 1))
 const fdm_backend3 = FDMBackend3()
 AD.@primitive function value_and_pullback_function(ab::FDMBackend3, f, xs...)
     value = f(xs...)
-    return function (vs)
-        pb_value = if vs === nothing
-            nothing
-        else
-            # Supports only single output
-            _vs = vs isa AbstractVector ? vs : only(vs)
-            FDM.j′vp(ab.alg, f, _vs, xs...)
-        end
-        return value, pb_value
+    function fd3_pullback(vs)
+        # Supports only single output
+        _vs = vs isa AbstractVector ? vs : only(vs)
+        return FDM.j′vp(ab.alg, f, _vs, xs...)
     end
+    return value, fd3_pullback
 end
 ##
 
@@ -96,15 +92,11 @@ const zygote_backend1 = ZygoteBackend1()
 AD.@primitive function value_and_pullback_function(ab::ZygoteBackend1, f, xs...)
     # Supports only single output
     value, back = Zygote.pullback(f, xs...)
-    return function (vs)
-        pb_value = if vs === nothing
-            nothing
-        else
-            _vs = vs isa AbstractVector ? vs : only(vs)
-            back(_vs)
-        end
-        value, pb_value
+    function zygote_pullback(vs)
+        _vs = vs isa AbstractVector ? vs : only(vs)
+        return back(_vs)
     end
+    return value, zygote_pullback
 end
 
 @testset "defaults" begin

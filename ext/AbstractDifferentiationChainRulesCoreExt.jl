@@ -5,20 +5,15 @@ using ChainRulesCore: ChainRulesCore
 
 AD.@primitive function value_and_pullback_function(ba::AD.ReverseRuleConfigBackend, f, xs...)
     value, back = ChainRulesCore.rrule_via_ad(AD.ruleconfig(ba), f, xs...)
-    function value_and_pullback(vs)
-        pb_value = if vs === nothing
-            nothing
+    function rrule_pullback(vs)
+        _vs = if vs isa Tuple && !(value isa Tuple)
+            only(vs)
         else
-            _vs = if vs isa Tuple && !(value isa Tuple)
-                only(vs)
-            else
-                vs
-            end
-            Base.tail(back(_vs))
+            vs
         end
-        return value, pb_value
+        return Base.tail(back(_vs))
     end
-    return value_and_pullback
+    return value, rrule_pullback
 end
 
 end # module
