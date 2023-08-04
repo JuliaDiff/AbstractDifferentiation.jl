@@ -24,6 +24,7 @@ In particular, you may want to use `AD.ReverseRuleConfigBackend(ruleconfig)` for
 
 The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [weak dependencies](https://pkgdocs.julialang.org/dev/creating-packages/#Weak-dependencies) on Julia ≥ 1.9 and [Requires.jl](https://github.com/JuliaPackaging/Requires.jl) on older Julia versions):
 
+- `AD.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
 - `AD.ForwardDiffBackend()` for [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 - `AD.FiniteDifferencesBackend()` for [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl)
 - `AD.ReverseDiffBackend()` for [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
