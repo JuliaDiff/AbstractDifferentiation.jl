@@ -32,8 +32,7 @@ function AD.gradient(b::AD.EnzymeForwardBackend, f, x::Real)
     return AD.derivative(b, f, x)
 end
 function AD.derivative(::AD.EnzymeForwardBackend, f, x::Number)
-    # Enzyme.gradient with Forward returns a tuple of the same length as the input
-    return Enzyme.gradient(Enzyme.Forward, x -> f(x[1]), [x])
+    (Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated(x, one(x)))[1],)
 end
 
 AD.@primitive function jacobian(::AD.EnzymeReverseBackend, f, x)
@@ -55,7 +54,7 @@ function AD.gradient(::AD.EnzymeReverseBackend, f, x::AbstractArray)
     return (dx,)
 end
 function AD.derivative(::AD.EnzymeReverseBackend, f, x::Number)
-    (AD.gradient(AD.EnzymeReverseBackend(), x -> f(x[1]), [x])[1][1],)
+    (Enzyme.autodiff(Enzyme.Reverse, f, Enzyme.Active(x))[1][1],)
 end
 
 end # module

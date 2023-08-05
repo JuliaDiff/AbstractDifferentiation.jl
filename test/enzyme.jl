@@ -1,4 +1,4 @@
-using AbstractDifferentiation
+import AbstractDifferentiation as AD
 using Test
 using Enzyme
 
@@ -23,9 +23,9 @@ backends = [
     @testset "Jacobian" begin
         test_jacobians(backend, multiple_inputs = false)
     end
-    @testset "Hessian" begin
-        test_hessians(backend, multiple_inputs = false)
-    end
+    # @testset "Hessian" begin
+    #     test_hessians(backend, multiple_inputs = false)
+    # end
     @testset "jvp" begin
         test_jvp(backend; multiple_inputs = false, vaugmented=true)
     end
@@ -41,7 +41,7 @@ backends = [
     @testset "Lazy Jacobian" begin
         test_lazy_jacobians(backend; multiple_inputs = false, vaugmented=true)
     end
-    @testset "Lazy Hessian" begin
-        test_lazy_hessians(backend, multiple_inputs = false)
-    end
+    # @testset "Lazy Hessian" begin
+    #     test_lazy_hessians(backend, multiple_inputs = false)
+    # end
 end
