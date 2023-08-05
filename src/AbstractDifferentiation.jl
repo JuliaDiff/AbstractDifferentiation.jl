@@ -162,18 +162,22 @@ function pushforward_function(
     f,
     xs...,
 )
-    return (ds) -> begin
-        return jacobian(lowest(ab), (xds...,) -> begin
-            if ds isa Tuple
-                @assert length(xs) == length(ds)
-                newxs = xs .+ ds .* xds
-                return f(newxs...)
-            else
-                newx = only(xs) + ds * only(xds)
-                return f(newx)
-            end
-        end, _zero.(xs, ds)...)
+    function _pf(ds::Tuple)
+        function _step(xds...)
+            @assert length(xs) == length(ds)
+            newxs = xs .+ ds .* xds
+            return f(newxs...)
+        end
+        return jacobian(lowest(ab), _step, _zero.(xs, ds)...)
     end
+    function _pf(ds)
+        function _step(xds)
+            newx = only(xs) + ds * xds
+            return f(newx)
+        end
+        return jacobian(lowest(ab), _step, _zero(only(xs), ds))
+    end
+    return _pf
 end
 function value_and_pushforward_function(
     ab::AbstractBackend,
@@ -221,18 +225,29 @@ end
 end
 
 function pullback_function(ab::AbstractBackend, f, xs...)
-    return (ws) -> begin
-        return gradient(lowest(ab), (xs...,) -> begin
-            vs = f(xs...)
-            if ws isa Tuple
+    function _pb(ws::Tuple)
+        function _dotwithoutput(_xs...)
+            vs = f(_xs...)
+            if vs isa Tuple
                 @assert length(vs) == length(ws)
                 return sum(Base.splat(_dot), zip(ws, vs))
             else
-                return _dot(vs, ws)
+                @assert 1 == length(ws)
+                return sum(Base.splat(_dot), zip(first(ws), vs))
             end
-        end, xs...)
+        end
+        return gradient(lowest(ab), _dotwithoutput, xs...)
     end
+    function _pb(ws)
+        function _dotwithoutput(_xs...)
+            vs = f(_xs...)
+            return _dot(vs, ws)
+        end
+        return gradient(lowest(ab), _dotwithoutput, xs...)
+    end
+    return _pb
 end
+
 function value_and_pullback_function(
     ab::AbstractBackend,
     f,
