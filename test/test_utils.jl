@@ -229,7 +229,14 @@ function test_jvp(backend; multiple_inputs=true, vaugmented=false, rng=Random.GL
     end
 
     valvec1, pf1 = AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)(v[1])
+    _valvec1, _pf1 = AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)((v[1],))
+    @test valvec1 == _valvec1
+    @test pf1 == _pf1
+
     valvec2, pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)(v[2])
+    _valvec2, _pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)((v[2],))
+    @test valvec2 == _valvec2
+    @test pf2 == _pf2
 
     if test_types
         @test valvec1 isa Vector{Float64}
@@ -247,7 +254,13 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG, test_
     w = rand(rng, length(fjac(xvec, yvec)))
     if multiple_inputs
         pb1 = AD.pullback_function(backend, fjac, xvec, yvec)(w)
+        _pb1 = AD.pullback_function(backend, fjac, xvec, yvec)((w,))
+        @test pb1 == _pb1
+
         valvec, pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)(w)
+        _valvec, _pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)((w,))
+        @test valvec == _valvec
+        @test pb2 == _pb2
 
         if test_types
             @test valvec isa Vector{Float64}
@@ -264,7 +277,15 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG, test_
     end
 
     valvec1, pb1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)(w)
+    _valvec1, _pb1 = AD.value_and_pullback_function(backend, x -> fjac(x, yvec), xvec)((w,))
+    @test valvec1 == _valvec1
+    @test pb1 == _pb1
+
     valvec2, pb2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)(w)
+    _valvec2, _pb2 = AD.value_and_pullback_function(backend, y -> fjac(xvec, y), yvec)((w,))
+    @test valvec2 == _valvec2
+    @test pb2 == _pb2
+
     if test_types
         @test valvec1 isa Vector{Float64}
         @test valvec2 isa Vector{Float64}
