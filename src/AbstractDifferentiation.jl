@@ -163,6 +163,7 @@ function pushforward_function(
     xs...,
 )
     return (ds) -> begin
+        z = (ds isa Tuple ? _zero.(xs, ds) : _zero.(xs, (ds,)))
         return jacobian(lowest(ab), (xds...,) -> begin
             if ds isa Tuple
                 @assert length(xs) == length(ds)
@@ -172,7 +173,7 @@ function pushforward_function(
                 newx = only(xs) + ds * only(xds)
                 return f(newx)
             end
-        end, _zero.(xs, ds)...)
+        end, z...)
     end
 end
 function value_and_pushforward_function(
@@ -224,9 +225,11 @@ function pullback_function(ab::AbstractBackend, f, xs...)
     return (ws) -> begin
         return gradient(lowest(ab), (xs...,) -> begin
             vs = f(xs...)
-            if ws isa Tuple
+            if ws isa Tuple && length(ws) > 1
                 @assert length(vs) == length(ws)
                 return sum(Base.splat(_dot), zip(ws, vs))
+            elseif ws isa Tuple && length(ws) == 1
+                return _dot(vs, only(ws))
             else
                 return _dot(vs, ws)
             end
