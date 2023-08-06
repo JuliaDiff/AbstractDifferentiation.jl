@@ -163,10 +163,17 @@ function pushforward_function(
     xs...,
 )
     return (ds) -> begin
-        z = (ds isa Tuple ? _zero.(xs, ds) : _zero.(xs, (ds,)))
+        if ds isa Tuple
+            @assert length(xs) == length(ds)
+            z = _zero.(xs, ds)
+        elseif length(xs) == 1
+            z = _zero.(xs, (ds,))
+        else
+            z = 0
+            throw(ArgumentError("The input and tangents are not of compatible sizes."))
+        end
         return jacobian(lowest(ab), (xds...,) -> begin
             if ds isa Tuple
-                @assert length(xs) == length(ds)
                 newxs = xs .+ ds .* xds
                 return f(newxs...)
             else
@@ -225,7 +232,7 @@ function pullback_function(ab::AbstractBackend, f, xs...)
     return (ws) -> begin
         return gradient(lowest(ab), (xs...,) -> begin
             vs = f(xs...)
-            if ws isa Tuple && length(ws) > 1
+            if ws isa Tuple && vs isa Tuple
                 @assert length(vs) == length(ws)
                 return sum(Base.splat(_dot), zip(ws, vs))
             elseif ws isa Tuple && length(ws) == 1
