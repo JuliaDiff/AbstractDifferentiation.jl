@@ -164,13 +164,15 @@ function pushforward_function(
 )
     return (ds) -> begin
         if ds isa Tuple
-            @assert length(xs) == length(ds)
+            if length(xs) != length(ds)
+                throw(ArgumentError("The input and tangents are not of compatible sizes."))
+            end
             z = _zero.(xs, ds)
-        elseif length(xs) == 1
-            z = _zero.(xs, (ds,))
         else
-            z = 0
-            throw(ArgumentError("The input and tangents are not of compatible sizes."))
+            if length(xs) != 1
+                throw(ArgumentError("The input and tangents are not of compatible sizes."))
+            end
+            z = _zero.(xs, (ds,))
         end
         return jacobian(lowest(ab), (xds...,) -> begin
             if ds isa Tuple
@@ -192,7 +194,9 @@ function value_and_pushforward_function(
         if !(ds isa Tuple)
             ds = (ds,)    
         end
-        @assert length(ds) == length(xs)
+        if length(ds) != length(xs)
+            throw(ArgumentError("The input and tangents are not of compatible sizes."))
+        end
         local value
         primalcalled = false
         if ab isa AbstractFiniteDifference
@@ -232,17 +236,28 @@ function pullback_function(ab::AbstractBackend, f, xs...)
     return (ws) -> begin
         return gradient(lowest(ab), (xs...,) -> begin
             vs = f(xs...)
-            if ws isa Tuple && vs isa Tuple
-                @assert length(vs) == length(ws)
-                return sum(Base.splat(_dot), zip(ws, vs))
-            elseif ws isa Tuple && length(ws) == 1
-                return _dot(vs, only(ws))
+            if ws isa Tuple
+                if vs isa Tuple
+                    if length(vs) != length(ws)
+                        throw(ArgumentError("The output and cotangents are not of compatible sizes."))
+                    end
+                    return sum(Base.splat(_dot), zip(ws, vs))
+                else
+                    if 1 != length(ws)
+                        throw(ArgumentError("The output and cotangents are not of compatible sizes."))
+                    end
+                    return _dot(vs, only(ws))
+                end
             else
+                if vs isa Tuple
+                    throw(ArgumentError("The output and cotangents are not of compatible sizes."))
+                end
                 return _dot(vs, ws)
             end
         end, xs...)
     end
 end
+
 function value_and_pullback_function(
     ab::AbstractBackend,
     f,

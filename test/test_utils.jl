@@ -233,6 +233,11 @@ function test_jvp(backend; multiple_inputs=true, vaugmented=false, rng=Random.GL
     @test valvec1 == _valvec1
     @test pf1 == _pf1
 
+    @test_throws MethodError AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)(v[1], nothing)  # 1 input, 2 plain tangents
+    @test_throws ArgumentError AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)((v[1], nothing))  # 1 input, 2 tuple tangents
+    @test_throws ArgumentError AD.value_and_pushforward_function(backend, (x, _) -> fjac(x, yvec), xvec, nothing)(v[1])  # 2 inputs, 1 plain tangent
+    @test_throws ArgumentError AD.value_and_pushforward_function(backend, (x, _) -> fjac(x, yvec), xvec, nothing)((v[1],))  # 2 inputs, 1 tuple tangent
+
     valvec2, pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)(v[2])
     _valvec2, _pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)((v[2],))
     @test valvec2 == _valvec2
@@ -256,6 +261,10 @@ function test_j′vp(backend; multiple_inputs=true, rng=Random.GLOBAL_RNG, test_
         pb1 = AD.pullback_function(backend, fjac, xvec, yvec)(w)
         _pb1 = AD.pullback_function(backend, fjac, xvec, yvec)((w,))
         @test pb1 == _pb1
+
+        @test_throws MethodError AD.pullback_function(backend, fjac, xvec, yvec)(w, nothing)  # 1 output, 2 plain cotangents
+        @test_throws ArgumentError AD.pullback_function(backend, fjac, xvec, yvec)((w, nothing))  # 1 output, 2 tuple cotangents
+        # TODO: how to test with 2 outputs and 1 cotangent?
 
         valvec, pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)(w)
         _valvec, _pb2 = AD.value_and_pullback_function(backend, fjac, xvec, yvec)((w,))
