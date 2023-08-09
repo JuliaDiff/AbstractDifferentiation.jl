@@ -230,8 +230,8 @@ function value_and_pullback_function(
     xs...,
 )
     value = f(xs...)
-    pbf = ws -> begin
-        return gradient(lowest(ab), (_xs...,) -> begin
+    function pullback_function(ws)
+        function pullback_gradient_function(_xs...)
             vs = f(_xs...)
             if ws isa Tuple
                 @assert length(vs) == length(ws)
@@ -239,9 +239,10 @@ function value_and_pullback_function(
             else
                 return _dot(vs, ws)
             end
-        end, xs...)
+        end
+        return gradient(lowest(ab), pullback_gradient_function, xs...)
     end
-    return value, pbf
+    return value, pullback_function
 end
 
 struct LazyDerivative{B, F, X}
