@@ -45,4 +45,9 @@ function AD.value_and_pullback_function(ba::AD.FiniteDifferencesBackend, f, xs..
     return value, fd_pullback
 end
 
+# Better performance: issue #87
+function AD.derivative(ba::AD.FiniteDifferencesBackend, f::TF, x::Real) where {TF<:Function}
+    return (ba.method(f, x),)
+end
+
 end # module

@@ -1,5 +1,7 @@
 # AbstractDifferentiation
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaDiff.github.io/AbstractDifferentiation.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaDiff.github.io/AbstractDifferentiation.jl/dev)
 [![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl)
 
@@ -31,6 +33,9 @@ The following backends are temporarily made available by `AbstractDifferentiatio
 - `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl), which is a special case of `AD.ReverseRuleConfigBackend`
 
 In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
+This is already the case for some of them:
+
+- `Diffractor.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
 
 Here's an example:
 
