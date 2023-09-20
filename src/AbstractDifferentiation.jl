@@ -480,6 +480,8 @@ macro primitive(expr)
         return define_jacobian_and_friends(fdef) |> esc
     elseif name == :primal_value
         return define_primal_value(fdef) |> esc
+    elseif name == :pullback_function
+        return define_pullback_function_and_friends(fdef) |> esc
     else
         throw("Unsupported AD primitive.")
     end
@@ -552,16 +554,6 @@ end
 
 _eachcol(a::Number) = (a,)
 _eachcol(a) = eachcol(a)
-
-function define_jacobian_and_friends(fdef)
-    fdef[:name] = :($(AbstractDifferentiation).jacobian)
-    return ExprTools.combinedef(fdef)
-end
-
-function define_primal_value(fdef)
-    fdef[:name] = :($(AbstractDifferentiation).primal_value)
-    return ExprTools.combinedef(fdef)
-end
 
 function identity_matrix_like(x)
     throw("The function `identity_matrix_like` is not defined for the type $(typeof(x)).")

@@ -15,7 +15,7 @@ Create an AD backend that uses forward mode with FiniteDifferences.jl.
 """
 AD.FiniteDifferencesBackend() = AD.FiniteDifferencesBackend(FiniteDifferences.central_fdm(5, 1))
 
-AD.@primitive function jacobian(ba::AD.FiniteDifferencesBackend, f, xs...)
+function AD.jacobian(ba::AD.FiniteDifferencesBackend, f, xs...)
     return FiniteDifferences.jacobian(ba.method, f, xs...)
 end
 
