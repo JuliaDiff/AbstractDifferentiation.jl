@@ -41,6 +41,10 @@ AD.primal_value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 
 # these implementations are more efficient than the fallbacks
 
+function AD.derivative(::AD.ForwardDiffBackend, f, x::Real)
+    return (ForwardDiff.derivative(f, x),)
+end
+
 function AD.gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     cfg = ForwardDiff.GradientConfig(f, x, chunk(ba, x))
     return (ForwardDiff.gradient(f, x, cfg),)
@@ -50,7 +54,7 @@ function AD.jacobian(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     cfg = ForwardDiff.JacobianConfig(AD.asarray ∘ f, x, chunk(ba, x))
     return (ForwardDiff.jacobian(AD.asarray ∘ f, x, cfg),)
 end
-AD.jacobian(::AD.ForwardDiffBackend, f, x::Number) = (ForwardDiff.derivative(f, x),)
+AD.jacobian(::AD.ForwardDiffBackend, f, x::Real) = (ForwardDiff.derivative(f, x),)
 
 function AD.hessian(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     cfg = ForwardDiff.HessianConfig(f, x, chunk(ba, x))

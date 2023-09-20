@@ -181,17 +181,8 @@ end
 end
 
 function pullback_function(ab::AbstractBackend, f, xs...)
-    return (ws) -> begin
-        return gradient(lowest(ab), (xs...,) -> begin
-            vs = f(xs...)
-            if ws isa Tuple
-                @assert length(vs) == length(ws)
-                return sum(Base.splat(_dot), zip(ws, vs))
-            else
-                return _dot(vs, ws)
-            end
-        end, xs...)
-    end
+    _, pbf = value_and_pullback_function(ab, f, xs...)
+    return pbf
 end
 function value_and_pullback_function(
     ab::AbstractBackend,
@@ -199,14 +190,19 @@ function value_and_pullback_function(
     xs...,
 )
     value = f(xs...)
-    pb_function = pullback_function(lowest(ab), f, xs...)
-    return ws -> begin
-        # We have to handle `nothing` since this function is called with an argument
-        # `nothing` in the default definition of `jacobian` created with
-        # `define_pullback_function_and_friends`
-        pb = ws === nothing ? nothing : pb_function(ws)
-        return value, pb
+    function pullback_function(ws)
+        function pullback_gradient_function(_xs...)
+            vs = f(_xs...)
+            if ws isa Tuple
+                @assert length(vs) == length(ws)
+                return sum(Base.splat(_dot), zip(ws, vs))
+            else
+                return _dot(vs, ws)
+            end
+        end
+        return gradient(lowest(ab), pullback_gradient_function, xs...)
     end
+    return value, pullback_function
 end
 
 struct LazyDerivative{B, F, X}
@@ -438,8 +434,8 @@ macro primitive(expr)
     name = fdef[:name]
     if name == :pushforward_function
         return define_pushforward_function_and_friends(fdef) |> esc
-    elseif name == :pullback_function
-        return define_pullback_function_and_friends(fdef) |> esc
+    elseif name == :value_and_pullback_function
+        return define_value_and_pullback_function_and_friends(fdef) |> esc
     elseif name == :jacobian
         return define_jacobian_and_friends(fdef) |> esc
     elseif name == :primal_value
@@ -485,19 +481,18 @@ function define_pushforward_function_and_friends(fdef)
     return funcs
 end
 
-function define_pullback_function_and_friends(fdef)
-    fdef[:name] = :($(AbstractDifferentiation).pullback_function)
+function define_value_and_pullback_function_and_friends(fdef)
+    fdef[:name] = :($(AbstractDifferentiation).value_and_pullback_function)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
         function $(AbstractDifferentiation).jacobian($(args...),)
-            value_and_pbf = $(value_and_pullback_function)($(args...),)
-            value, _ = value_and_pbf(nothing)
+            value, pbf = $(value_and_pullback_function)($(args...),)
             identity_like = $(identity_matrix_like)(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
                     return mapreduce(vcat, $(_eachcol).(identity_like_i)...) do (cols...)
-                        value_and_pbf(cols)[2]'
+                        pbf(cols)'
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
@@ -505,10 +500,10 @@ function define_pullback_function_and_friends(fdef)
                 # value is a (grad,). Then, identity_like is a (matrix,).
                 # cols loops over columns of the matrix  
                 return vcat.(mapslices(identity_like[1], dims=1) do cols
-                    adjoint.(value_and_pbf((cols,))[2])
+                    adjoint.(pbf((cols,)))
                 end ...)
             else
-                return adjoint.(value_and_pbf(identity_like)[2])
+                return adjoint.(pbf(identity_like))
             end
         end
     end
@@ -517,16 +512,6 @@ end
 
 _eachcol(a::Number) = (a,)
 _eachcol(a) = eachcol(a)
-
-function define_jacobian_and_friends(fdef)
-    fdef[:name] = :($(AbstractDifferentiation).jacobian)
-    return ExprTools.combinedef(fdef)
-end
-
-function define_primal_value(fdef)
-    fdef[:name] = :($(AbstractDifferentiation).primal_value)
-    return ExprTools.combinedef(fdef)
-end
 
 function identity_matrix_like(x)
     throw("The function `identity_matrix_like` is not defined for the type $(typeof(x)).")

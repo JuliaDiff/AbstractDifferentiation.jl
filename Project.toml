@@ -1,7 +1,7 @@
 name = "AbstractDifferentiation"
 uuid = "c29ec348-61ec-40c8-8164-b8c60e9d9f3d"
 authors = ["Mohamed Tarek <mohamed82008@gmail.com> and contributors"]
-version = "0.5.2"
+version = "0.6.0-DEV"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"

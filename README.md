@@ -1,7 +1,10 @@
 # AbstractDifferentiation
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaDiff.github.io/AbstractDifferentiation.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaDiff.github.io/AbstractDifferentiation.jl/dev)
 [![CI](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaDiff/AbstractDifferentiation.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/AbstractDifferentiation.jl)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 ## Motivation
 
@@ -31,6 +34,9 @@ The following backends are temporarily made available by `AbstractDifferentiatio
 - `AD.ZygoteBackend()` for [Zygote.jl](https://github.com/FluxML/Zygote.jl), which is a special case of `AD.ReverseRuleConfigBackend`
 
 In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
+This is already the case for some of them:
+
+- `Diffractor.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
 
 Here's an example:
 
@@ -86,7 +92,7 @@ This operation goes by a few names. Refer to the [ChainRules documentation](http
 
 The following functions can be used to request the pullback operator/function with or without the function value. In order to request the pullback function `pb_f` of a function `f` at the inputs `xs`, you can use either of:
 - `pb_f = AD.pullback_function(ab::AD.AbstractBackend, f, xs...)`: returns the pullback function `pb_f` of the function `f` at the inputs `xs`. `pb_f` is a function that accepts the co-tangents `vs` as input which is a tuple of length equal to the number of outputs of `f`. If `f` has a single output, `pb_f` can also accept a single input instead of a 1-tuple.
-- `value_and_pb_f = AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)`: returns a function `value_and_pb_f` which accepts the co-tangent `vs` as input which is a tuple of length equal to the number of outputs of `f`. If `f` has a single output, `value_and_pb_f` can accept a single input instead of a 1-tuple. `value_and_pb_f` returns a 2-tuple, namely the value `f(xs...)` and output of the pullback operator.
+- `value_and_pb_f = AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)`: computes the function value `v = f(xs...)` and returns a 2-tuple containing the value `v` and a function `pb_f` that accepts the co-tangent `vs` as input, which is a tuple of length equal to the number of outputs of `f`. If `f` has a single output, `pb_f` can accept a single input instead of a 1-tuple.
 
 ### Lazy operators
 
