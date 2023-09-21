@@ -436,10 +436,6 @@ macro primitive(expr)
         return define_pushforward_function_and_friends(fdef) |> esc
     elseif name == :value_and_pullback_function
         return define_value_and_pullback_function_and_friends(fdef) |> esc
-    elseif name == :jacobian
-        return define_jacobian_and_friends(fdef) |> esc
-    elseif name == :primal_value
-        return define_primal_value(fdef) |> esc
     else
         throw("Unsupported AD primitive.")
     end
