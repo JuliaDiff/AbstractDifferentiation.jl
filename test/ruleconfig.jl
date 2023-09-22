@@ -46,19 +46,20 @@ using Zygote
         # Jacobian computation still works
         # https://github.com/JuliaDiff/AbstractDifferentiation.jl/pull/70#issuecomment-1449481724
         function f(x, a)
-           r = Ref(x)
-           r[] = r[] + r[]
-           r[] = r[] * a
-           r[]
+            r = Ref(x)
+            r[] = r[] + r[]
+            r[] = r[] * a
+            return r[]
         end
-        @test AD.jacobian(ad, f, [1, 2, 3], 3) == ([6.0 0.0 0.0; 0.0 6.0 0.0; 0.0 0.0 6.0], [2.0, 4.0, 6.0])
+        @test AD.jacobian(ad, f, [1, 2, 3], 3) ==
+            ([6.0 0.0 0.0; 0.0 6.0 0.0; 0.0 0.0 6.0], [2.0, 4.0, 6.0])
     end
 
     # issue #57
     @testset "primal computation in rrule" begin
         function myfunc(x)
             @info "This should not be logged if I have an rrule"
-            x
+            return x
         end
         ChainRulesCore.rrule(::typeof(myfunc), x) = (x, (y -> (NoTangent(), y)))
 

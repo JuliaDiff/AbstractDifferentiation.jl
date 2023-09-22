@@ -12,7 +12,7 @@ struct HigherOrderBackend{B} <: AbstractBackend
 end
 reduce_order(b::AbstractBackend) = b
 function reduce_order(b::HigherOrderBackend)
-    if length(b.backends)==1 
+    if length(b.backends) == 1
         return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
     else
         return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
@@ -40,11 +40,11 @@ function derivative(ab::AbstractBackend, f, xs::Number...)
 end
 
 function gradient(ab::AbstractBackend, f, xs...)
-    return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
+    return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)), size.(xs))
 end
 function jacobian(ab::AbstractBackend, f, xs...) end
-function jacobian(ab::HigherOrderBackend, f, xs...) 
-    jacobian(lowest(ab), f, xs...)
+function jacobian(ab::HigherOrderBackend, f, xs...)
+    return jacobian(lowest(ab), f, xs...)
 end
 
 function hessian(ab::AbstractBackend, f, x)
@@ -63,7 +63,7 @@ function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
 end
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
-    return value, reshape.(adjoint.(jacs),size.(xs))
+    return value, reshape.(adjoint.(jacs), size.(xs))
 end
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     value = f(xs...)
@@ -105,10 +105,12 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     end
 
     value = f(x)
-    grads, hess = value_and_jacobian(second_lowest(ab), _x -> begin
-        g = gradient(lowest(ab), f, _x)
-        return g[1] # gradient returns a tuple
-    end, x)
+    grads, hess = value_and_jacobian(
+        second_lowest(ab), _x -> begin
+            g = gradient(lowest(ab), f, _x)
+            return g[1] # gradient returns a tuple
+        end, x
+    )
 
     return value, (grads,), hess
 end
@@ -119,47 +121,45 @@ function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     end
 
     value = f(x)
-    grads, hess = value_and_jacobian(second_lowest(ab), _x -> begin
-        g = gradient(lowest(ab), f, _x)
-        return g[1] # gradient returns a tuple
-    end, x)
+    grads, hess = value_and_jacobian(
+        second_lowest(ab), _x -> begin
+            g = gradient(lowest(ab), f, _x)
+            return g[1] # gradient returns a tuple
+        end, x
+    )
 
     return value, (grads,), hess
 end
 
-function pushforward_function(
-    ab::AbstractBackend,
-    f,
-    xs...,
-)
+function pushforward_function(ab::AbstractBackend, f, xs...)
     return (ds) -> begin
-        return jacobian(lowest(ab), (xds...,) -> begin
-            if ds isa Tuple
-                @assert length(xs) == length(ds)
-                newxs = xs .+ ds .* xds
-                return f(newxs...)
-            else
-                newx = only(xs) + ds * only(xds)
-                return f(newx)
-            end
-        end, _zero.(xs, ds)...)
+        return jacobian(
+            lowest(ab),
+            (xds...,) -> begin
+                if ds isa Tuple
+                    @assert length(xs) == length(ds)
+                    newxs = xs .+ ds .* xds
+                    return f(newxs...)
+                else
+                    newx = only(xs) + ds * only(xds)
+                    return f(newx)
+                end
+            end,
+            _zero.(xs, ds)...,
+        )
     end
 end
-function value_and_pushforward_function(
-    ab::AbstractBackend,
-    f,
-    xs...,
-)
+function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
     pf_function = pushforward_function(lowest(ab), f, xs...)
 
     return ds -> begin
         if !(ds isa Tuple)
-            ds = (ds,)    
+            ds = (ds,)
         end
         @assert length(ds) == n
-        pf = pf_function(ds)        
+        pf = pf_function(ds)
         return value, pf
     end
 end
@@ -184,11 +184,7 @@ function pullback_function(ab::AbstractBackend, f, xs...)
     _, pbf = value_and_pullback_function(ab, f, xs...)
     return pbf
 end
-function value_and_pullback_function(
-    ab::AbstractBackend,
-    f,
-    xs...,
-)
+function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
     function pullback_function(ws)
         function pullback_gradient_function(_xs...)
@@ -205,7 +201,7 @@ function value_and_pullback_function(
     return value, pullback_function
 end
 
-struct LazyDerivative{B, F, X}
+struct LazyDerivative{B,F,X}
     backend::B
     f::F
     xs::X
@@ -221,28 +217,27 @@ end
 
 function Base.:*(d::LazyDerivative, y::Union{Number,Tuple})
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     return derivative(d.backend, d.f, d.xs...) .* y
 end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyDerivative)
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     return y .* derivative(d.backend, d.f, d.xs...)
 end
 
 function Base.:*(d::LazyDerivative, y::AbstractArray)
-    return map((d)-> d*y, derivative(d.backend, d.f, d.xs...))
+    return map((d) -> d * y, derivative(d.backend, d.f, d.xs...))
 end
 
 function Base.:*(y::AbstractArray, d::LazyDerivative)
-    return map((d)-> y*d, derivative(d.backend, d.f, d.xs...))
+    return map((d) -> y * d, derivative(d.backend, d.f, d.xs...))
 end
 
-
-struct LazyGradient{B, F, X}
+struct LazyGradient{B,F,X}
     backend::B
     f::F
     xs::X
@@ -252,7 +247,7 @@ Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
 function Base.:*(d::LazyGradient, y::Union{Number,Tuple})
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     if d.xs isa Tuple
         return gradient(d.backend, d.f, d.xs...) .* y
@@ -263,7 +258,7 @@ end
 
 function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
     if y isa Tuple && d.xs isa Tuple
-        @assert length(y) == length(d.xs) 
+        @assert length(y) == length(d.xs)
     end
     if d.xs isa Tuple
         return y .* gradient(d.backend, d.f, d.xs...)
@@ -272,8 +267,7 @@ function Base.:*(y::Union{Number,Tuple}, d::LazyGradient)
     end
 end
 
-
-struct LazyJacobian{B, F, X}
+struct LazyJacobian{B,F,X}
     backend::B
     f::F
     xs::X
@@ -281,7 +275,7 @@ end
 
 function Base.:*(d::LazyJacobian, ys)
     if !(ys isa Tuple)
-        ys = (ys, )
+        ys = (ys,)
     end
     if d.xs isa Tuple
         vjp = pushforward_function(d.backend, d.f, d.xs...)(ys)
@@ -324,8 +318,7 @@ function Base.:*(ys::Number, d::LazyJacobian)
     end
 end
 
-
-struct LazyHessian{B, F, X}
+struct LazyHessian{B,F,X}
     backend::B
     f::F
     xs::X
@@ -333,17 +326,23 @@ end
 
 function Base.:*(d::LazyHessian, ys)
     if !(ys isa Tuple)
-        ys = (ys, )
+        ys = (ys,)
     end
 
     if d.xs isa Tuple
-        res =  pushforward_function(
+        res = pushforward_function(
             second_lowest(d.backend),
-            (xs...,) -> gradient(lowest(d.backend), d.f, xs...)[1], d.xs...,)(ys)  # [1] because gradient returns a tuple
+            (xs...,) -> gradient(lowest(d.backend), d.f, xs...)[1],
+            d.xs...,
+        )(
+            ys
+        )  # [1] because gradient returns a tuple
     else
-        res =  pushforward_function(
-            second_lowest(d.backend),
-            (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],d.xs,)(ys)  # gradient returns a tuple
+        res = pushforward_function(
+            second_lowest(d.backend), (xs,) -> gradient(lowest(d.backend), d.f, xs)[1], d.xs
+        )(
+            ys
+        )  # gradient returns a tuple
     end
     if res isa Tuple
         return res
@@ -363,32 +362,33 @@ function Base.:*(ys, d::LazyHessian)
             second_lowest(d.backend),
             (xs...,) -> gradient(lowest(d.backend), d.f, xs...),
             d.xs...,
-            )(ya)
+        )(
+            ya
+        )
     else
         return pullback_function(
-            second_lowest(d.backend),
-            (xs,) -> gradient(lowest(d.backend), d.f, xs)[1],
-            d.xs,
-            )(ya)
+            second_lowest(d.backend), (xs,) -> gradient(lowest(d.backend), d.f, xs)[1], d.xs
+        )(
+            ya
+        )
     end
 end
 
 function Base.:*(d::LazyHessian, ys::Number)
     if d.xs isa Tuple
-        return hessian(d.backend, d.f, d.xs...).*ys
+        return hessian(d.backend, d.f, d.xs...) .* ys
     else
-        return hessian(d.backend, d.f, d.xs).*ys
+        return hessian(d.backend, d.f, d.xs) .* ys
     end
 end
 
 function Base.:*(ys::Number, d::LazyHessian)
     if d.xs isa Tuple
-        return ys.*hessian(d.backend, d.f, d.xs...)
+        return ys .* hessian(d.backend, d.f, d.xs...)
     else
-        return ys.*hessian(d.backend, d.f, d.xs)
+        return ys .* hessian(d.backend, d.f, d.xs)
     end
 end
-
 
 function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
     return LazyDerivative(ab, f, xs)
@@ -403,13 +403,13 @@ function lazy_jacobian(ab::AbstractBackend, f, xs...)
     return LazyJacobian(ab, f, xs)
 end
 
-struct D{B, F}
+struct D{B,F}
     backend::B
     f::F
 end
 D(b::AbstractBackend, d::D) = H(HigherOrderBackend((b, d.b)), d.f)
 D(d::D) = H(HigherOrderBackend((d.backend, d.backend)), d.f)
-function (d::D)(xs...; lazy = true)
+function (d::D)(xs...; lazy=true)
     if lazy
         return lazy_jacobian(d.ab, d.f, xs...)
     else
@@ -417,11 +417,11 @@ function (d::D)(xs...; lazy = true)
     end
 end
 
-struct H{B, F}
+struct H{B,F}
     backend::B
     f::F
 end
-function (h::H)(xs...; lazy = true)
+function (h::H)(xs...; lazy=true)
     if lazy
         return lazy_hessian(h.ab, h.f, xs...)
     else
@@ -433,9 +433,9 @@ macro primitive(expr)
     fdef = ExprTools.splitdef(expr)
     name = fdef[:name]
     if name == :pushforward_function
-        return define_pushforward_function_and_friends(fdef) |> esc
+        return esc(define_pushforward_function_and_friends(fdef))
     elseif name == :value_and_pullback_function
-        return define_value_and_pullback_function_and_friends(fdef) |> esc
+        return esc(define_value_and_pullback_function_and_friends(fdef))
     else
         throw("Unsupported AD primitive.")
     end
@@ -446,10 +446,10 @@ function define_pushforward_function_and_friends(fdef)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function $(AbstractDifferentiation).jacobian($(args...),)
-            identity_like = $(identity_matrix_like)($(args[3:end]...),)
-            pff = $(pushforward_function)($(args...),)
-            if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix, Number}}}
+        function $(AbstractDifferentiation).jacobian($(args...))
+            identity_like = $(identity_matrix_like)($(args[3:end]...))
+            pff = $(pushforward_function)($(args...))
+            if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix,Number}}}
                 return map(identity_like) do identity_like_i
                     return mapreduce(hcat, $(_eachcol).(identity_like_i)...) do (cols...)
                         pff(cols)
@@ -457,16 +457,16 @@ function define_pushforward_function_and_friends(fdef)
                 end
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
-                ret = hcat.(mapslices(identity_like[1], dims=1) do cols
+                ret = hcat.(mapslices(identity_like[1]; dims=1) do cols
                     # cols loop over basis states   
                     pf = pff((cols,))
                     if typeof(pf) <: AbstractVector
                         # to make the hcat. work / get correct matrix-like, non-flat output dimension
-                        return (pf, )
+                        return (pf,)
                     else
                         return pf
                     end
-                end ...)
+                end...)
                 return ret isa Tuple ? ret : (ret,)
 
             else
@@ -482,8 +482,8 @@ function define_value_and_pullback_function_and_friends(fdef)
     args = fdef[:args]
     funcs = quote
         $(ExprTools.combinedef(fdef))
-        function $(AbstractDifferentiation).jacobian($(args...),)
-            value, pbf = $(value_and_pullback_function)($(args...),)
+        function $(AbstractDifferentiation).jacobian($(args...))
+            value, pbf = $(value_and_pullback_function)($(args...))
             identity_like = $(identity_matrix_like)(value)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
@@ -495,9 +495,9 @@ function define_value_and_pullback_function_and_friends(fdef)
                 # needed for Hessian computation:
                 # value is a (grad,). Then, identity_like is a (matrix,).
                 # cols loops over columns of the matrix  
-                return vcat.(mapslices(identity_like[1], dims=1) do cols
+                return vcat.(mapslices(identity_like[1]; dims=1) do cols
                     adjoint.(pbf((cols,)))
-                end ...)
+                end...)
             else
                 return adjoint.(pbf(identity_like))
             end
@@ -523,11 +523,11 @@ identity_matrix_like(x::Tuple) = identity_matrix_like(x...)
     expr = :(())
     for i in 1:length(x)
         push!(expr.args, :(()))
-        for j in 1:i-1
+        for j in 1:(i - 1)
             push!(expr.args[i].args, :((zero_matrix_like(x[$j])[1])))
         end
         push!(expr.args[i].args, :((identity_matrix_like(x[$i]))[1]))
-        for j in i+1:length(x)
+        for j in (i + 1):length(x)
             push!(expr.args[i].args, :(zero_matrix_like(x[$j])[1]))
         end
     end
@@ -550,18 +550,28 @@ include("backends.jl")
 # TODO: Replace with proper version
 const EXTENSIONS_SUPPORTED = isdefined(Base, :get_extension)
 if !EXTENSIONS_SUPPORTED
-   using Requires: @require
-   include("../ext/AbstractDifferentiationChainRulesCoreExt.jl")
+    using Requires: @require
+    include("../ext/AbstractDifferentiationChainRulesCoreExt.jl")
 end
 @static if !EXTENSIONS_SUPPORTED
     function __init__()
         @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
-            @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include("../ext/AbstractDifferentiationForwardDiffExt.jl")
-            @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include("../ext/AbstractDifferentiationReverseDiffExt.jl")
+            @require ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210" include(
+                "../ext/AbstractDifferentiationForwardDiffExt.jl"
+            )
+            @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" include(
+                "../ext/AbstractDifferentiationReverseDiffExt.jl"
+            )
         end
-        @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include("../ext/AbstractDifferentiationFiniteDifferencesExt.jl")
-        @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include("../ext/AbstractDifferentiationTrackerExt.jl")
-        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/AbstractDifferentiationZygoteExt.jl")
+        @require FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000" include(
+            "../ext/AbstractDifferentiationFiniteDifferencesExt.jl"
+        )
+        @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" include(
+            "../ext/AbstractDifferentiationTrackerExt.jl"
+        )
+        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include(
+            "../ext/AbstractDifferentiationZygoteExt.jl"
+        )
     end
 end
 

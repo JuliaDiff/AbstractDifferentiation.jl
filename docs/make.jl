@@ -1,7 +1,9 @@
 using AbstractDifferentiation
 using Documenter
 
-DocMeta.setdocmeta!(AbstractDifferentiation, :DocTestSetup, :(using AbstractDifferentiation); recursive=true)
+DocMeta.setdocmeta!(
+    AbstractDifferentiation, :DocTestSetup, :(using AbstractDifferentiation); recursive=true
+)
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaDiff/AbstractDifferentiation.jl/blob/master/"
@@ -34,13 +36,7 @@ makedocs(;
         edit_link="master",
         assets=String[],
     ),
-    pages=[
-        "Home" => "index.md",
-        "API reference" => "api.md",
-    ],
+    pages=["Home" => "index.md", "API reference" => "api.md"],
 )
 
-deploydocs(;
-    repo="github.com/JuliaDiff/AbstractDifferentiation.jl",
-    devbranch="master",
-)
+deploydocs(; repo="github.com/JuliaDiff/AbstractDifferentiation.jl", devbranch="master")
