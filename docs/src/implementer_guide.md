@@ -1,6 +1,7 @@
 # Implementer guide
 
 !!! warning "Work in progress"
+    
     Come back later!
 
 ## The macro `@primitive`
@@ -24,18 +25,17 @@ See the backend-specific extensions in the `ext/` folder of the repository for e
 These details are not part of the public API and are expected to change.
 They are just listed here to help readers figure out the code structure:
 
-- `jacobian` has no default implementation
-- `derivative` calls `jacobian`
-- `gradient` calls `jacobian`
-- `hessian` calls `jacobian` and `gradient`
+  - `jacobian` has no default implementation
 
-- `value_and_jacobian` calls `jacobian`
-- `value_and_derivative` calls `value_and_jacobian`
-- `value_and_gradient` calls `value_and_jacobian`
-- `value_and_hessian` calls `jacobian` and `gradient`
-- `value_gradient_and_hessian` calls `value_and_jacobian` and `gradient`
-
-- `pushforward_function` calls `jacobian`
-- `value_and_pushforward_function` calls `pushforward_function`
-- `pullback_function` calls `value_and_pullback_function`
-- `value_and_pullback_function` calls `gradient`
+  - `derivative` calls `jacobian`
+  - `gradient` calls `jacobian`
+  - `hessian` calls `jacobian` and `gradient`
+  - `value_and_jacobian` calls `jacobian`
+  - `value_and_derivative` calls `value_and_jacobian`
+  - `value_and_gradient` calls `value_and_jacobian`
+  - `value_and_hessian` calls `jacobian` and `gradient`
+  - `value_gradient_and_hessian` calls `value_and_jacobian` and `gradient`
+  - `pushforward_function` calls `jacobian`
+  - `value_and_pushforward_function` calls `pushforward_function`
+  - `pullback_function` calls `value_and_pullback_function`
+  - `value_and_pullback_function` calls `gradient`
