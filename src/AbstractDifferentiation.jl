@@ -563,7 +563,6 @@ end
 
 D(b::AbstractBackend, d::D) = H(HigherOrderBackend((b, d.b)), d.f)
 D(d::D) = H(HigherOrderBackend((d.backend, d.backend)), d.f)
-
 function (d::D)(xs...; lazy=true)
     if lazy
         return lazy_jacobian(d.ab, d.f, xs...)
