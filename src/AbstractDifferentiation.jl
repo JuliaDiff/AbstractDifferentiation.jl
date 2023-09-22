@@ -48,9 +48,9 @@ primal_value(x) = x
 """
     AD.derivative(ab::AD.AbstractBackend, f, xs::Number...)
 
-Compute the derivatives `ds` of `f` wrt the numbers `xs` using the backend `ab`. 
+Compute the derivatives of `f` with respect to the numbers `xs` using the backend `ab`.
 
-Return a tuple `ds` of derivatives, one for each element in `xs`.
+The function returns a `Tuple` of derivatives, one for each element in `xs`.
 """
 function derivative(ab::AbstractBackend, f, xs::Number...)
     der = getindex.(jacobian(lowest(ab), f, xs...), 1)
