@@ -106,9 +106,9 @@ end
 """
     AD.value_and_derivative(ab::AD.AbstractBackend, f, xs::Number...)
 
-Compute the function value `v = f(xs...)` and the derivatives `ds` of `f` wrt the numbers `xs` using the backend `ab`.
-    
-Return a tuple `(v, ds)` where `ds` is a tuple of derivatives, one for each element in `xs`.
+Return the tuple `(v, ds)` of the function value `v = f(xs...)` and the derivatives `ds = AD.derivative(ab, f, xs...).
+
+See also [`AD.derivative`](@ref).
 """
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
