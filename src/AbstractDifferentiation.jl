@@ -106,7 +106,7 @@ end
 """
     AD.value_and_derivative(ab::AD.AbstractBackend, f, xs::Number...)
 
-Return the tuple `(v, ds)` of the function value `v = f(xs...)` and the derivatives `ds = AD.derivative(ab, f, xs...).
+Return the tuple `(v, ds)` of the function value `v = f(xs...)` and the derivatives `ds = AD.derivative(ab, f, xs...)`.
 
 See also [`AD.derivative`](@ref).
 """
@@ -118,7 +118,7 @@ end
 """
     AD.value_and_gradient(ab::AD.AbstractBackend, f, xs...)
 
-Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...).
+Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...)`.
     
 See also [`AD.gradient`](@ref).
 """
@@ -244,7 +244,7 @@ end
 """
     AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Return a function that computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)`.
+Return a function that, given tangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
 See also [`AD.pushforward_function`](@ref).
 """
@@ -285,11 +285,11 @@ end
 
 """
     AD.pullback_function(ab::AD.AbstractBackend, f, xs...)
+
+Return the pullback function `pb` of the function `f` at the inputs `xs` using backend `ab`. 
     
-Return the pullback function `pb_f` of the function `f` at the inputs `xs`.
-    
-`pb_f` is a function that accepts the co-tangents `vs` as input, which is a tuple of length equal to the number of outputs of `f`.
-If `f` has a single output, `pb_f` can also accept a single input instead of a 1-tuple.
+The pullback function `pb` accepts as input a `Tuple` of cotangents, one for each output of `f`.
+If `f` has a single output, `pb` can also accept a single input instead of a 1-tuple.
 """
 function pullback_function(ab::AbstractBackend, f, xs...)
     _, pbf = value_and_pullback_function(ab, f, xs...)
@@ -298,12 +298,10 @@ end
 
 """
     AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)
-    
-Return a function `value_and_pb_f` computing a 2-tuple.
-This tuple contains the value `f(xs...)` and the output of the pullback function `pb_f`.
-    
-`pb_f` is a function that accepts the co-tangent `vs` as input, which is a tuple of length equal to the number of outputs of `f`.
-If `f` has a single output, `pb_f` can accept a single input instead of a 1-tuple.
+
+Return a function that, given cotangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pullback function `AD.pullback_function(ab, f, xs...)` applied to `ts`.
+
+See also [`AD.pullback_function`](@ref).
 """
 function value_and_pullback_function(
     ab::AbstractBackend,
