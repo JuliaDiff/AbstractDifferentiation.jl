@@ -217,10 +217,10 @@ end
 """
     AD.pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Returns the pushforward function `pf_f` of the function `f` at the inputs `xs`. 
+Return the pushforward function `pf` of the function `f` at the inputs `xs` using backend `ab`. 
     
-`pf_f` is a function that accepts the tangents `vs` as input which is a tuple of length equal to the length of the tuple `xs`.
-If `f` has a single input, `pf_f` can also accept a single input instead of a 1-tuple.
+The pushfoward function `pf` accepts as input a `Tuple` of tangents, one for each element in `xs`.
+If `xs` consists of a single element, `pf` can also accept a single tangent instead of a 1-tuple.
 """
 function pushforward_function(
     ab::AbstractBackend,
