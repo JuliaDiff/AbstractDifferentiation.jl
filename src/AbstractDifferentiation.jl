@@ -118,9 +118,9 @@ end
 """
     AD.value_and_gradient(ab::AD.AbstractBackend, f, xs...)
 
-Compute the function value `v = f(xs...)` and the gradients `gs` of `f` wrt the inputs `xs` using the backend `ab`.
+Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...).
     
-Return a tuple `(v, gs)` where `gs` is a tuple of gradients, one for each element in `xs`.
+See also [`AD.gradient`](@ref).
 """
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
