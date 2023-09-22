@@ -64,9 +64,9 @@ end
 """
     AD.gradient(ab::AD.AbstractBackend, f, xs...)
 
-Compute the gradients `gs` of `f` wrt the inputs `xs` using the backend `ab`.
+Compute the gradients of `f` with respect to the inputs `xs` using the backend `ab`.
 
-Return a tuple `gs` of gradients, one for each element in `xs`.
+The function returns a `Tuple` of gradients, one for each element in `xs`.
 """
 function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)),size.(xs))
