@@ -8,7 +8,7 @@ abstract type AbstractForwardMode <: AbstractBackend end
 abstract type AbstractReverseMode <: AbstractBackend end
 
 """
-    HigherOrderBackend{B}
+    AD.HigherOrderBackend{B}
 
 Let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend.
 To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`.
@@ -510,7 +510,7 @@ function Base.:*(ys::Number, d::LazyHessian)
 end
 
 """
-    lazy_derivative(ab::AbstractBackend, f, xs::Number...)
+    AD.lazy_derivative(ab::AbstractBackend, f, xs::Number...)
     
 Return an operator `ld` for multiplying by the derivative of `f` at `xs`.
     
@@ -521,7 +521,7 @@ function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
 end
 
 """
-    lazy_gradient(ab::AbstractBackend, f, xs...)
+    AD.lazy_gradient(ab::AbstractBackend, f, xs...)
     
 Return an operator `lg` for multiplying by the gradient of `f` at `xs`.
     
@@ -532,7 +532,7 @@ function lazy_gradient(ab::AbstractBackend, f, xs...)
 end
 
 """
-    lazy_hessian(ab::AbstractBackend, f, x)
+    AD.lazy_hessian(ab::AbstractBackend, f, x)
     
 Return an operator `lh` for multiplying by the Hessian of the scalar-valued function `f` at `x`.
     
@@ -543,7 +543,7 @@ function lazy_hessian(ab::AbstractBackend, f, xs...)
 end
 
 """
-    lazy_jacobian(ab::AbstractBackend, f, xs...)
+    AD.lazy_jacobian(ab::AbstractBackend, f, xs...)
     
 Return an operator `lj` for multiplying by the Jacobian of `f` at `xs`.
     
@@ -563,6 +563,7 @@ end
 
 D(b::AbstractBackend, d::D) = H(HigherOrderBackend((b, d.b)), d.f)
 D(d::D) = H(HigherOrderBackend((d.backend, d.backend)), d.f)
+
 function (d::D)(xs...; lazy=true)
     if lazy
         return lazy_jacobian(d.ab, d.f, xs...)
@@ -575,6 +576,7 @@ struct H{B,F}
     backend::B
     f::F
 end
+
 function (h::H)(xs...; lazy=true)
     if lazy
         return lazy_hessian(h.ab, h.f, xs...)
