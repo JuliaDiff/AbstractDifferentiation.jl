@@ -88,9 +88,9 @@ end
 """
     AD.hessian(ab::AD.AbstractBackend, f, x)
 
-Compute the Hessian `h` of `f` wrt the input `x` using the backend `ab`.
+Compute the Hessian of `f` wrt the input `x` using the backend `ab`.
 
-Return a single matrix `h`, because `hessian` currently only supports a single input.
+The function returns a single matrix because `hessian` currently only supports a single input.
 """
 function hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
