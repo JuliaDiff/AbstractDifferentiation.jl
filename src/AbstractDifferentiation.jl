@@ -107,7 +107,7 @@ end
 
 Return the tuple `(v, ds)` of the function value `v = f(xs...)` and the derivatives `ds = AD.derivative(ab, f, xs...)`.
 
-See also [`AD.derivative`](@ref).
+See also [`AbstractDifferentiation.derivative`](@ref).
 """
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
@@ -119,7 +119,7 @@ end
 
 Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...)`.
     
-See also [`AD.gradient`](@ref).
+See also [`AbstractDifferentiation.gradient`](@ref).
 """
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
@@ -131,7 +131,7 @@ end
 
 Return the tuple `(v, Js)` of the function value `v = f(xs...)` and the Jacobians `Js = AD.jacobian(ab, f, xs...)`.
     
-See also [`AD.jacobian`](@ref).
+See also [`AbstractDifferentiation.jacobian`](@ref).
 """
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     value = f(xs...)
@@ -144,7 +144,7 @@ end
 
 Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = AD.hessian(ab, f, x)`.
 
-See also [`AD.hessian`](@ref).    
+See also [`AbstractDifferentiation.hessian`](@ref).    
 """
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -181,7 +181,7 @@ end
     
 Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g = AD.gradient(ab, f, x)`, and the Hessian `H = AD.hessian(ab, f, x)`.
 
-See also [`AD.gradient`](@ref) and [`AD.hessian`](@ref).
+See also [`AbstractDifferentiation.gradient`](@ref) and [`AbstractDifferentiation.hessian`](@ref).
 """
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -249,7 +249,7 @@ end
     
 Return a function that, given tangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
-See also [`AD.pushforward_function`](@ref).
+See also [`AbstractDifferentiation.pushforward_function`](@ref).
 """
 function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
@@ -300,7 +300,7 @@ end
 
 Return a function that, given cotangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pullback function `AD.pullback_function(ab, f, xs...)` applied to `ts`.
 
-See also [`AD.pullback_function`](@ref).
+See also [`AbstractDifferentiation.pullback_function`](@ref).
 """
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)

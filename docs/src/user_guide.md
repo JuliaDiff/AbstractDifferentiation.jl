@@ -32,12 +32,12 @@ julia> AD.gradient(backend, f, collect(1:3))
 The following backends are temporarily made available by `AbstractDifferentiation` as soon as their corresponding package is loaded (thanks to [weak dependencies](https://pkgdocs.julialang.org/dev/creating-packages/#Weak-dependencies) on Julia ≥ 1.9 and [Requires.jl](https://github.com/JuliaPackaging/Requires.jl) on older Julia versions):
 
 ```@docs
-AD.ReverseDiffBackend
-AD.ReverseRuleConfigBackend
-AD.FiniteDifferencesBackend
-AD.ZygoteBackend
-AD.ForwardDiffBackend
-AD.TrackerBackend
+AbstractDifferentiation.ReverseDiffBackend
+AbstractDifferentiation.ReverseRuleConfigBackend
+AbstractDifferentiation.FiniteDifferencesBackend
+AbstractDifferentiation.ZygoteBackend
+AbstractDifferentiation.ForwardDiffBackend
+AbstractDifferentiation.TrackerBackend
 ```
 
 In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
@@ -48,7 +48,7 @@ This is already the case for:
 For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`.
 
 ```@docs
-AD.HigherOrderBackend
+AbstractDifferentiation.HigherOrderBackend
 ```
 
 ## Derivatives
@@ -56,10 +56,10 @@ AD.HigherOrderBackend
 The following list of functions can be used to request the derivative, gradient, Jacobian or Hessian without the function value.
 
 ```@docs
-AD.derivative
-AD.gradient
-AD.jacobian
-AD.hessian
+AbstractDifferentiation.derivative
+AbstractDifferentiation.gradient
+AbstractDifferentiation.jacobian
+AbstractDifferentiation.hessian
 ```
 
 ## Value and derivatives
@@ -67,11 +67,11 @@ AD.hessian
 The following list of functions can be used to request the function value along with its derivative, gradient, Jacobian or Hessian. You can also request the function value, its gradient and Hessian for single-input functions.
 
 ```@docs
-AD.value_and_derivative
-AD.value_and_gradient
-AD.value_and_jacobian
-AD.value_and_hessian
-AD.value_gradient_and_hessian
+AbstractDifferentiation.value_and_derivative
+AbstractDifferentiation.value_and_gradient
+AbstractDifferentiation.value_and_jacobian
+AbstractDifferentiation.value_and_hessian
+AbstractDifferentiation.value_gradient_and_hessian
 ```
 
 ## Jacobian-vector products
@@ -81,8 +81,8 @@ This operation goes by a few names, like "pushforward". Refer to the [ChainRules
 The following functions can be used to request a function that returns the pushforward operator/function. In order to request the pushforward function `pf_f` of a function `f` at the inputs `xs`, you can use either of:
 
 ```@docs
-AD.pushforward_function
-AD.value_and_pushforward_function
+AbstractDifferentiation.pushforward_function
+AbstractDifferentiation.value_and_pushforward_function
 ```
 
 ## Vector-Jacobian products
@@ -92,8 +92,8 @@ This operation goes by a few names, like "pullback". Refer to the [ChainRules do
 The following functions can be used to request the pullback operator/function with or without the function value. In order to request the pullback function `pb_f` of a function `f` at the inputs `xs`, you can use either of:
 
 ```@docs
-AD.pullback_function
-AD.value_and_pullback_function
+AbstractDifferentiation.pullback_function
+AbstractDifferentiation.value_and_pullback_function
 ```
 
 ## Lazy operators
@@ -101,10 +101,10 @@ AD.value_and_pullback_function
 You can also get a struct for the lazy derivative/gradient/Jacobian/Hessian of a function. You can then use the `*` operator to apply the lazy operator on a value or tuple of the correct shape. To get a lazy derivative/gradient/Jacobian/Hessian use any one of:
 
 ```@docs
-AD.lazy_derivative
-AD.lazy_gradient
-AD.lazy_jacobian
-AD.lazy_hessian
+AbstractDifferentiation.lazy_derivative
+AbstractDifferentiation.lazy_gradient
+AbstractDifferentiation.lazy_jacobian
+AbstractDifferentiation.lazy_hessian
 ```
 
 ## Index
