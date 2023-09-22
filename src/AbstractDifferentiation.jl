@@ -143,9 +143,9 @@ end
 """
     AD.value_and_hessian(ab::AD.AbstractBackend, f, x)
 
-Compute the function value `v = f(x)` and the Hessian `h` of `f` wrt the input `x` using the backend `ab`.
-    
-Return a tuple `(v, h)` where `h` is a single matrix, because `hessian` currently only supports a single input. 
+Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = AD.hessian(ab, f, x)`.
+
+See also [`AD.hessian`](@ref).    
 """
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
