@@ -75,9 +75,9 @@ end
 """
     AD.jacobian(ab::AD.AbstractBackend, f, xs...)
 
-Compute the Jacobians `js` of `f` wrt the inputs `xs` using the backend `ab`.
+Compute the Jacobians of `f` with respect to the inputs `xs` using the backend `ab`.
 
-Return a tuple `js` of Jacobians, one for each element in `xs`.
+The function returns a `Tuple` of Jacobians, one for each element in `xs`.
 """
 function jacobian(ab::AbstractBackend, f, xs...) end
 
