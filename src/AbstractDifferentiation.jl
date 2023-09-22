@@ -244,11 +244,9 @@ end
 """
     AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Return a function `value_and_pf_f` that computes a 2-tuple.
-This tuple contains the value `f(xs...)` and the output of the pushforward function `pf_f`.
-    
-`value_and_pf_f` is a function that accepts the tangent `vs` as input, which is a tuple of length equal to the length of the tuple `xs`.
-If `f` has a single input, `value_and_pf_f` can accept a single input instead of a 1-tuple.
+Return a function that computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)`.
+
+See also [`AD.pushforward_function`](@ref).
 """
 function value_and_pushforward_function(
     ab::AbstractBackend,
