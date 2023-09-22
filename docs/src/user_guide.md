@@ -43,7 +43,7 @@ AD.TrackerBackend
 In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
 This is already the case for:
 
-- `Diffractor.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
+  - `Diffractor.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
 
 For higher order derivatives, you can build higher order backends using `AD.HigherOrderBackend`.
 

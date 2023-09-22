@@ -47,7 +47,6 @@ AD backend that uses reverse mode with [Tracker.jl](https://github.com/FluxML/Tr
 """
 struct TrackerBackend <: AbstractReverseMode end
 
-
 """
     ReverseRuleConfigBackend
 

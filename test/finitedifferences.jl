@@ -7,8 +7,7 @@ using FiniteDifferences
     # `central_fdm(5, 1)` is not type-inferrable, so only check inferrability
     # with user-specified method
     backends = [
-        AD.FiniteDifferencesBackend(),
-        @inferred(AD.FiniteDifferencesBackend(method)),
+        AD.FiniteDifferencesBackend(), @inferred(AD.FiniteDifferencesBackend(method))
     ]
     @test backends[2].method === method
 
