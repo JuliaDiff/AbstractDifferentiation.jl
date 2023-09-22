@@ -41,7 +41,7 @@ AD.TrackerBackend
 ```
 
 In the long term, these backend objects (and many more) will be defined within their respective packages to enforce the `AbstractDifferentiation` interface.
-This is already the case for some of them:
+This is already the case for:
 
 - `Diffractor.DiffractorForwardBackend()` for [Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) in forward mode
 
