@@ -130,9 +130,9 @@ end
 """
     AD.value_and_jacobian(ab::AD.AbstractBackend, f, xs...)
 
-Compute the function value `v = f(xs...)` and the Jacobians `js` of `f` wrt the inputs `xs` using the backend `ab`.
+Return the tuple `(v, Js)` of the function value `v = f(xs...)` and the Jacobians `Js = AD.jacobian(ab, f, xs...)`.
     
-Return a tuple `(v, js)` where `js` is a tuple of Jacobians, one for each element in `xs`.
+See also [`AD.jacobian`](@ref).
 """
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     value = f(xs...)
