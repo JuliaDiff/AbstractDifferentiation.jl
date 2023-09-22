@@ -15,7 +15,7 @@ Julia has more (automatic) differentiation packages than you can count on 2 hand
 ## Getting started
 
 - If you are an autodiff user and want to write code in a backend-agnostic way, read the _user guide_ in the docs.
-- If you are an autodiff developer and want your backend to implement the interface, read the _implementer guide_ in the docs.
+- If you are an autodiff developer and want your backend to implement the interface, read the _implementer guide_ in the docs (still in construction).
 
 ## Citing this package
 
