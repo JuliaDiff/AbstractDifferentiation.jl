@@ -9,11 +9,11 @@
 To implement the `AbstractDifferentiation` interface for your backend, you only _need_ to provide a "primitive" from which the rest of the functions can be deduced.
 However, for performance reasons, you _can_ implement more of the interface to make certain calls faster.
 
-At the moment, the only primitives supported are `pushforward_function` and `value_and_pullback_function`.
-The `@primitive` macro uses the provided function to implement `AD.jacobian`, and all the other functions follow.
+At the moment, the only primitives supported are `AD.pushforward_function` and `AD.value_and_pullback_function`.
+The `AD.@primitive` macro uses the provided function to implement `AD.jacobian`, and all the other functions follow.
 
 ```julia
-AD.@primitive function myprimitive(ab::MyBackend, f, xs...)
+AD.@primitive function AD.myprimitive(ab::MyBackend, f, xs...)
     # write your code here
 end
 ```
@@ -26,7 +26,6 @@ These details are not part of the public API and are expected to change.
 They are just listed here to help readers figure out the code structure:
 
   - `jacobian` has no default implementation
-
   - `derivative` calls `jacobian`
   - `gradient` calls `jacobian`
   - `hessian` calls `jacobian` and `gradient`
