@@ -1,0 +1,35 @@
+name: JuliaFormatter
+
+on:
+  pull_request:
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: 1
+      - name: Install JuliaFormatter
+        run: |
+          import Pkg
+          Pkg.add(; name = "JuliaFormatter", version = "1")
+        shell: julia --color=yes {0}
+      - name: Format code
+        run: |
+          using JuliaFormatter
+          format("."; verbose = true)
+        shell: julia --color=yes {0}
+      - uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: JuliaFormatter
+          fail_on_error: true
+          filter_mode: added
+
