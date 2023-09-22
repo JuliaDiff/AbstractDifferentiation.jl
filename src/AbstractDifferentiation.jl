@@ -180,9 +180,9 @@ end
 """
     AD.value_gradient_and_hessian(ab::AD.AbstractBackend, f, x)
     
-Compute the function value `v = f(x)` and the gradient `g` and Hessian `h` of `f` wrt the input `x` using the backend `ab`.
-    
-Return a tuple `(v, g, h)` where `g` is a single vector and `h` is a single matrix, because `hessian` currently only supports a single input.
+Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g = AD.gradient(ab, f, x)`, and the Hessian `H = AD.hessian(ab, f, x)`.
+
+See also [`AD.gradient`](@ref) and [`AD.hessian`](@ref).
 """
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
