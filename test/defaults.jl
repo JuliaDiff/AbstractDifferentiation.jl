@@ -12,7 +12,7 @@ end
 FDMBackend1() = FDMBackend1(central_fdm(5, 1))
 const fdm_backend1 = FDMBackend1()
 # Minimal interface
-AD.@primitive function jacobian(ab::FDMBackend1, f, xs...)
+function AD.jacobian(ab::FDMBackend1, f, xs...)
     return FDM.jacobian(ab.alg, f, xs...)
 end
 
@@ -33,23 +33,21 @@ struct FDMBackend3{A} <: AD.AbstractFiniteDifference
 end
 FDMBackend3() = FDMBackend3(central_fdm(5, 1))
 const fdm_backend3 = FDMBackend3()
-AD.@primitive function pullback_function(ab::FDMBackend3, f, xs...)
-    return function (vs)
+AD.@primitive function value_and_pullback_function(ab::FDMBackend3, f, xs...)
+    value = f(xs...)
+    function fd3_pullback(vs)
         # Supports only single output
-        if vs isa AbstractVector
-            return FDM.j′vp(ab.alg, f, vs, xs...)
-        else
-            return FDM.j′vp(ab.alg, f, only(vs), xs...)
-        end
+        _vs = vs isa AbstractVector ? vs : only(vs)
+        return FDM.j′vp(ab.alg, f, _vs, xs...)
     end
+    return value, fd3_pullback
 end
 ##
-
 
 ## ForwardDiff
 struct ForwardDiffBackend1 <: AD.AbstractForwardMode end
 const forwarddiff_backend1 = ForwardDiffBackend1()
-AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
+function AD.jacobian(ab::ForwardDiffBackend1, f, xs)
     if xs isa Number
         return (ForwardDiff.derivative(f, xs),)
     elseif xs isa AbstractArray
@@ -60,9 +58,9 @@ AD.@primitive function jacobian(ab::ForwardDiffBackend1, f, xs)
             return (ForwardDiff.jacobian(f, xs),)
         end
     elseif xs isa Tuple
-        error(typeof(xs))      
+        error(typeof(xs))
     else
-        error(typeof(xs)) 
+        error(typeof(xs))
     end
 end
 AD.primal_value(::ForwardDiffBackend1, ::Any, f, xs) = ForwardDiff.value.(f(xs...))
@@ -75,12 +73,12 @@ AD.@primitive function pushforward_function(ab::ForwardDiffBackend2, f, xs...)
         if xs isa Tuple
             @assert length(xs) <= 2
             if length(xs) == 1
-                (ForwardDiff.derivative(h->f(xs[1]+h*vs[1]),0),)
+                (ForwardDiff.derivative(h -> f(xs[1] + h * vs[1]), 0),)
             else
-                ForwardDiff.derivative(h->f(xs[1]+h*vs[1], xs[2]+h*vs[2]),0)
+                ForwardDiff.derivative(h -> f(xs[1] + h * vs[1], xs[2] + h * vs[2]), 0)
             end
         else
-            ForwardDiff.derivative(h->f(xs+h*vs),0)
+            ForwardDiff.derivative(h -> f(xs + h * vs), 0)
         end
     end
 end
@@ -90,21 +88,21 @@ AD.primal_value(::ForwardDiffBackend2, ::Any, f, xs) = ForwardDiff.value.(f(xs..
 ## Zygote
 struct ZygoteBackend1 <: AD.AbstractReverseMode end
 const zygote_backend1 = ZygoteBackend1()
-AD.@primitive function pullback_function(ab::ZygoteBackend1, f, xs...)
-    return function (vs)
-        # Supports only single output
-        _, back = Zygote.pullback(f, xs...)
-        if vs isa AbstractVector
-            back(vs)
-        else
-            back(only(vs))
-        end
+AD.@primitive function value_and_pullback_function(ab::ZygoteBackend1, f, xs...)
+    # Supports only single output
+    value, back = Zygote.pullback(f, xs...)
+    function zygote_pullback(vs)
+        _vs = vs isa AbstractVector ? vs : only(vs)
+        return back(_vs)
     end
+    return value, zygote_pullback
 end
 
 @testset "defaults" begin
     @testset "Utils" begin
-        test_higher_order_backend(fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend2)
+        test_higher_order_backend(
+            fdm_backend1, fdm_backend2, fdm_backend3, zygote_backend1, forwarddiff_backend2
+        )
     end
     @testset "FiniteDifferences" begin
         @testset "Derivative" begin
@@ -128,7 +126,7 @@ end
             test_hessians(fdm_backend3)
         end
         @testset "jvp" begin
-            test_jvp(fdm_backend1, test_types=false)
+            test_jvp(fdm_backend1; test_types=false)
             test_jvp(fdm_backend2; vaugmented=true)
             test_jvp(fdm_backend3)
         end
@@ -212,9 +210,9 @@ end
         end
         @testset "Hessian" begin
             # Zygote over Zygote problems
-            backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
+            backends = AD.HigherOrderBackend((forwarddiff_backend2, zygote_backend1))
             test_hessians(backends)
-            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            backends = AD.HigherOrderBackend((zygote_backend1, forwarddiff_backend1))
             test_hessians(backends)
             # fails:
             # backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend2))
@@ -237,9 +235,9 @@ end
         end
         @testset "Lazy Hessian" begin
             # Zygote over Zygote problems
-            backends = AD.HigherOrderBackend((forwarddiff_backend2,zygote_backend1))
+            backends = AD.HigherOrderBackend((forwarddiff_backend2, zygote_backend1))
             test_lazy_hessians(backends)
-            backends = AD.HigherOrderBackend((zygote_backend1,forwarddiff_backend1))
+            backends = AD.HigherOrderBackend((zygote_backend1, forwarddiff_backend1))
             test_lazy_hessians(backends)
         end
     end
