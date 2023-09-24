@@ -18,7 +18,8 @@ end
 
 AD.@primitive function value_and_pullback_function(b::AD.EnzymeReverseBackend, f, xs...)
     y = f(xs...)
-    return y, Δ -> begin
+    return y,
+    Δ -> begin
         Δ_xs = zero.(xs)
         dup = if y isa Real
             if Δ isa Real
@@ -52,7 +53,8 @@ function AD.pushforward_function(::AD.EnzymeReverseBackend, f, xs...)
 end
 
 AD.@primitive function pushforward_function(b::AD.EnzymeForwardBackend, f, xs...)
-    ds -> Tuple(Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated.(xs, copy.(ds))...))
+    return ds ->
+        Tuple(Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated.(xs, copy.(ds))...))
 end
 function AD.value_and_pullback_function(::AD.EnzymeForwardBackend, f, xs...)
     return AD.value_and_pullback_function(AD.EnzymeReverseBackend(), f, xs...)
