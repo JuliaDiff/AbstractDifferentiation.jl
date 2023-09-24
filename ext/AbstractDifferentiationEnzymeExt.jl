@@ -8,53 +8,54 @@ else
     using ..Enzyme: Enzyme
 end
 
-AD.@primitive function jacobian(b::AD.EnzymeForwardBackend, f, x)
-    val = f(x)
-    if val isa Real
-        return adjoint.(AD.gradient(b, f, x))
-    else
-        if length(x) == 1 && length(val) == 1
-            # Enzyme.jacobian returns a vector of length 1 in this case
-            return (Matrix(adjoint(Enzyme.jacobian(Enzyme.Forward, f, x))),)
-        else
-            return (Enzyme.jacobian(Enzyme.Forward, f, x),)
-        end
-    end
+struct Mutating{F}
+    f::F
 end
-function AD.jacobian(b::AD.EnzymeForwardBackend, f, x::Real)
-    return AD.derivative(b, f, x)
-end
-function AD.gradient(::AD.EnzymeForwardBackend, f, x::AbstractArray)
-    # Enzyme.gradient with Forward returns a tuple of the same length as the input
-    return ([Enzyme.gradient(Enzyme.Forward, f, x)...],)
-end
-function AD.gradient(b::AD.EnzymeForwardBackend, f, x::Real)
-    return AD.derivative(b, f, x)
-end
-function AD.derivative(::AD.EnzymeForwardBackend, f, x::Number)
-    (Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated(x, one(x)))[1],)
+function (f::Mutating)(y, xs...)
+    y .= f.f(xs...)
+    return y
 end
 
-AD.@primitive function jacobian(::AD.EnzymeReverseBackend, f, x)
-    val = f(x)
-    if val isa Real
-        return (adjoint(Enzyme.gradient(Enzyme.Reverse, f, x)),)
-    else
-        if length(x) == 1 && length(val) == 1
-            # Enzyme.jacobian returns an adjoint vector of length 1 in this case
-            return (Matrix(Enzyme.jacobian(Enzyme.Reverse, f, x, Val(1))),)
+AD.@primitive function value_and_pullback_function(b::AD.EnzymeReverseBackend, f, xs...)
+    y = f(xs...)
+    return y, Δ -> begin
+        Δ_xs = zero.(xs)
+        dup = if y isa Real
+            if Δ isa Real
+                Enzyme.Duplicated([y], [Δ])
+            elseif Δ isa Tuple{Real}
+                Enzyme.Duplicated([y], [Δ[1]])
+            else
+                throw(ArgumentError("Unsupported cotangent type."))
+            end
         else
-            return (Enzyme.jacobian(Enzyme.Reverse, f, x, Val(length(val))),)
+            if Δ isa AbstractArray{<:Real}
+                Enzyme.Duplicated(y, Δ)
+            elseif Δ isa Tuple{AbstractArray{<:Real}}
+                Enzyme.Duplicated(y, Δ[1])
+            else
+                throw(ArgumentError("Unsupported cotangent type."))
+            end
         end
+        Enzyme.autodiff(
+            Enzyme.Reverse,
+            Mutating(f),
+            Enzyme.Const,
+            dup,
+            Enzyme.Duplicated.(xs, Δ_xs)...,
+        )
+        return Δ_xs
     end
 end
-function AD.gradient(::AD.EnzymeReverseBackend, f, x::AbstractArray)
-    dx = similar(x)
-    Enzyme.gradient!(Enzyme.Reverse, dx, f, x)
-    return (dx,)
+function AD.pushforward_function(::AD.EnzymeReverseBackend, f, xs...)
+    return AD.pushforward_function(AD.EnzymeForwardBackend(), f, xs...)
 end
-function AD.derivative(::AD.EnzymeReverseBackend, f, x::Number)
-    (Enzyme.autodiff(Enzyme.Reverse, f, Enzyme.Active(x))[1][1],)
+
+AD.@primitive function pushforward_function(b::AD.EnzymeForwardBackend, f, xs...)
+    ds -> Tuple(Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated.(xs, copy.(ds))...))
+end
+function AD.value_and_pullback_function(::AD.EnzymeForwardBackend, f, xs...)
+    return AD.value_and_pullback_function(AD.EnzymeReverseBackend(), f, xs...)
 end
 
 end # module
