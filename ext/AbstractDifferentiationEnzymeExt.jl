@@ -53,8 +53,7 @@ function AD.pushforward_function(::AD.EnzymeReverseBackend, f, xs...)
 end
 
 AD.@primitive function pushforward_function(b::AD.EnzymeForwardBackend, f, xs...)
-    return ds ->
-        Tuple(Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated.(xs, copy.(ds))...))
+    return ds -> Tuple(Enzyme.autodiff(Enzyme.Forward, f, Enzyme.Duplicated.(xs, ds)...))
 end
 function AD.value_and_pullback_function(::AD.EnzymeForwardBackend, f, xs...)
     return AD.value_and_pullback_function(AD.EnzymeReverseBackend(), f, xs...)
