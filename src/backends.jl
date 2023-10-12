@@ -81,3 +81,23 @@ It is a special case of [`ReverseRuleConfigBackend`](@ref).
     To be able to use this backend, you have to load Zygote.
 """
 function ZygoteBackend end
+
+"""
+    EnzymeReverseBackend
+
+AD backend that uses reverse mode of Enzyme.jl.
+
+!!! note
+    To be able to use this backend, you have to load Enzyme.
+"""
+struct EnzymeReverseBackend <: AbstractReverseMode end
+
+"""
+    EnzymeForwardBackend
+
+AD backend that uses forward mode of Enzyme.jl.
+
+!!! note
+    To be able to use this backend, you have to load Enzyme.
+"""
+struct EnzymeForwardBackend <: AbstractForwardMode end

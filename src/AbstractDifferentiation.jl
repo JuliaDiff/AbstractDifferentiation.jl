@@ -310,6 +310,8 @@ function value_and_pullback_function(ab::AbstractBackend, f, xs...)
             if ws isa Tuple
                 @assert length(vs) == length(ws)
                 return sum(Base.splat(_dot), zip(ws, vs))
+            elseif ws isa Tuple && length(ws) == 1
+                return _dot(vs, only(ws))
             else
                 return _dot(vs, ws)
             end
