@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches: [master]
-    tags: '*'
   pull_request:
 
 concurrency:
@@ -41,30 +40,3 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      statuses: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: '1'
-      - name: Configure doc environment
-        run: |
-          julia --project=docs/ -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: |
-          julia --project=docs -e '
-            using Documenter: DocMeta, doctest
-            using AbstractDifferentiation
-            DocMeta.setdocmeta!(AbstractDifferentiation, :DocTestSetup, :(using AbstractDifferentiation); recursive=true)
-            doctest(AbstractDifferentiation)'
