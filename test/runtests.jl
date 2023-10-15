@@ -1,7 +1,9 @@
 using AbstractDifferentiation
+using Documenter
 using Test
 
-@testset "AbstractDifferentiation.jl" begin
+@testset verbose=true "AbstractDifferentiation.jl" begin
+    doctest(AbstractDifferentiation)
     include("test_utils.jl")
     include("defaults.jl")
     include("forwarddiff.jl")
