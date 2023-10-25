@@ -118,7 +118,7 @@ end
     AD.value_and_gradient(ab::AD.AbstractBackend, f, xs...)
 
 Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...)`.
-    
+
 See also [`AbstractDifferentiation.gradient`](@ref).
 """
 function value_and_gradient(ab::AbstractBackend, f, xs...)
@@ -130,7 +130,7 @@ end
     AD.value_and_jacobian(ab::AD.AbstractBackend, f, xs...)
 
 Return the tuple `(v, Js)` of the function value `v = f(xs...)` and the Jacobians `Js = AD.jacobian(ab, f, xs...)`.
-    
+
 See also [`AbstractDifferentiation.jacobian`](@ref).
 """
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
@@ -144,7 +144,7 @@ end
 
 Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = AD.hessian(ab, f, x)`.
 
-See also [`AbstractDifferentiation.hessian`](@ref).    
+See also [`AbstractDifferentiation.hessian`](@ref).
 """
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -178,7 +178,7 @@ end
 
 """
     AD.value_gradient_and_hessian(ab::AD.AbstractBackend, f, x)
-    
+
 Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g = AD.gradient(ab, f, x)`, and the Hessian `H = AD.hessian(ab, f, x)`.
 
 See also [`AbstractDifferentiation.gradient`](@ref) and [`AbstractDifferentiation.hessian`](@ref).
@@ -219,9 +219,9 @@ end
 
 """
     AD.pushforward_function(ab::AD.AbstractBackend, f, xs...)
-    
-Return the pushforward function `pf` of the function `f` at the inputs `xs` using backend `ab`. 
-    
+
+Return the pushforward function `pf` of the function `f` at the inputs `xs` using backend `ab`.
+
 The pushfoward function `pf` accepts as input a `Tuple` of tangents, one for each element in `xs`.
 If `xs` consists of a single element, `pf` can also accept a single tangent instead of a 1-tuple.
 """
@@ -246,7 +246,7 @@ end
 
 """
     AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
-    
+
 Return a function that, given tangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
 See also [`AbstractDifferentiation.pushforward_function`](@ref).
@@ -256,13 +256,13 @@ function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
     pf_function = pushforward_function(lowest(ab), f, xs...)
 
-    return ds -> begin
+    return value, ds -> begin
         if !(ds isa Tuple)
             ds = (ds,)
         end
         @assert length(ds) == n
         pf = pf_function(ds)
-        return value, pf
+        return pf
     end
 end
 
@@ -285,8 +285,8 @@ end
 """
     AD.pullback_function(ab::AD.AbstractBackend, f, xs...)
 
-Return the pullback function `pb` of the function `f` at the inputs `xs` using backend `ab`. 
-    
+Return the pullback function `pb` of the function `f` at the inputs `xs` using backend `ab`.
+
 The pullback function `pb` accepts as input a `Tuple` of cotangents, one for each output of `f`.
 If `f` has a single output, `pb` can also accept a single input instead of a 1-tuple.
 """
@@ -511,9 +511,9 @@ end
 
 """
     AD.lazy_derivative(ab::AbstractBackend, f, xs::Number...)
-    
+
 Return an operator `ld` for multiplying by the derivative of `f` at `xs`.
-    
+
 You can apply the operator by multiplication e.g. `ld * y` where `y` is a number if `f` has a single input, a tuple of the same length as `xs` if `f` has multiple inputs, or an array of numbers/tuples.
 """
 function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
@@ -522,9 +522,9 @@ end
 
 """
     AD.lazy_gradient(ab::AbstractBackend, f, xs...)
-    
+
 Return an operator `lg` for multiplying by the gradient of `f` at `xs`.
-    
+
 You can apply the operator by multiplication e.g. `lg * y` where `y` is a number if `f` has a single input or a tuple of the same length as `xs` if `f` has multiple inputs.
 """
 function lazy_gradient(ab::AbstractBackend, f, xs...)
@@ -533,9 +533,9 @@ end
 
 """
     AD.lazy_hessian(ab::AbstractBackend, f, x)
-    
+
 Return an operator `lh` for multiplying by the Hessian of the scalar-valued function `f` at `x`.
-    
+
 You can apply the operator by multiplication e.g. `lh * y` or `y' * lh` where `y` is a number or a vector of the appropriate length.
 """
 function lazy_hessian(ab::AbstractBackend, f, xs...)
@@ -544,10 +544,10 @@ end
 
 """
     AD.lazy_jacobian(ab::AbstractBackend, f, xs...)
-    
+
 Return an operator `lj` for multiplying by the Jacobian of `f` at `xs`.
-    
-You can apply the operator by multiplication e.g. `lj * y` or `y' * lj` where `y` is a number, vector or tuple of numbers and/or vectors. 
+
+You can apply the operator by multiplication e.g. `lj * y` or `y' * lj` where `y` is a number, vector or tuple of numbers and/or vectors.
 If `f` has multiple inputs, `y` in `lj * y` should be a tuple.
 If `f` has multiple outputs, `y` in `y' * lj` should be a tuple.
 Otherwise, it should be a scalar or a vector of the appropriate length.
@@ -614,7 +614,7 @@ function define_pushforward_function_and_friends(fdef)
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
                 ret = hcat.(mapslices(identity_like[1]; dims=1) do cols
-                    # cols loop over basis states   
+                    # cols loop over basis states
                     pf = pff((cols,))
                     if typeof(pf) <: AbstractVector
                         # to make the hcat. work / get correct matrix-like, non-flat output dimension
@@ -650,7 +650,7 @@ function define_value_and_pullback_function_and_friends(fdef)
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for Hessian computation:
                 # value is a (grad,). Then, identity_like is a (matrix,).
-                # cols loops over columns of the matrix  
+                # cols loops over columns of the matrix
                 return vcat.(mapslices(identity_like[1]; dims=1) do cols
                     adjoint.(pbf((cols,)))
                 end...)
