@@ -145,7 +145,7 @@ end
 
 function test_hessians(backend; multiple_inputs=false, test_types=true)
     if multiple_inputs
-        # ... but 
+        # ... but
         error("multiple_inputs=true is not supported.")
     else
         # explicit test that AbstractDifferentiation throws an error
@@ -207,11 +207,15 @@ function test_jvp(
 
             pf1 = map(v -> AD.pushforward_function(backend, fjac, xvec, yvec)(v), vaug)
             ((valvec1, pf2x), (valvec2, pf2y)) = map(
-                v -> AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v), vaug
+                v -> begin
+                    vl, jvf_1 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)
+                    vl, jvf_1(v)
+                end, vaug
             )
         else
             pf1 = AD.pushforward_function(backend, fjac, xvec, yvec)(v)
-            valvec, pf2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v)
+            valvec, jvf_2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)
+            pf2 = jvf_2(v)
             ((valvec1, pf2x), (valvec2, pf2y)) = (valvec, pf2[1]), (valvec, pf2[2])
         end
 
@@ -234,12 +238,10 @@ function test_jvp(
         @test yvec == yvec2
     end
 
-    valvec1, pf1 = AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)(
-        v[1]
-    )
-    valvec2, pf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)(
-        v[2]
-    )
+    valvec1, jvf1 = AD.value_and_pushforward_function(backend, x -> fjac(x, yvec), xvec)
+    pf1 = jvf1(v[1])
+    valvec2, jvf2 = AD.value_and_pushforward_function(backend, y -> fjac(xvec, y), yvec)
+    pf2 = jvf2(v[2])
 
     if test_types
         @test valvec1 isa Vector{Float64}
