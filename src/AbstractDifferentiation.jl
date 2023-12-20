@@ -86,6 +86,24 @@ function jacobian(ab::HigherOrderBackend, f, xs...)
 end
 
 """
+    AD.second_derivative(ab::AD.AbstractBackend, f, xs...)
+
+Compute the second derivative of `f` with respect to the input `x` using the backend `ab`.
+
+The function returns a single value because `second_derivative` currently only supports a single input.
+"""
+function second_derivative(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of second derivative for functions with single input argument
+        x = only(x)
+    end
+    return derivative(second_lowest(ab), x -> begin
+        d = derivative(lowest(ab), f, x)
+        return d[1] # derivative returns a tuple
+    end, x)
+end
+
+"""
     AD.hessian(ab::AD.AbstractBackend, f, x)
 
 Compute the Hessian of `f` wrt the input `x` using the backend `ab`.
@@ -140,11 +158,22 @@ function value_and_jacobian(ab::AbstractBackend, f, xs...)
 end
 
 """
+    AD.value_and_second_derivative(ab::AD.AbstractBackend, f, x)
+
+Return the tuple `(v, d2)` of the function value `v = f(x)` and the second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.hessian(ab, f, x)`.
+
+See also [`AbstractDifferentiation.second_derivative`](@ref)
+"""
+function value_and_second_derivative(ab::AbstractBackend, f, x)
+    return f(x), second_derivative(ab, f, x)
+end
+
+"""
     AD.value_and_hessian(ab::AD.AbstractBackend, f, x)
 
 Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = AD.hessian(ab, f, x)`.
 
-See also [`AbstractDifferentiation.hessian`](@ref).    
+See also [`AbstractDifferentiation.hessian`](@ref). 
 """
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -174,6 +203,15 @@ function value_and_hessian(ab::HigherOrderBackend, f, x)
     end, x)
 
     return value, hess
+end
+
+"""
+    AD.value_and_derivatives(ab::AD.AbstractBackend, f, x)
+
+Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.second_derivative(ab, f, x)`.
+"""
+function value_and_derivatives(ab::AbstractBackend, f, x)
+    return value_and_derivative(ab, f, x)..., second_derivative(ab, f, x)[1]
 end
 
 """

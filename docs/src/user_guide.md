@@ -53,24 +53,27 @@ AbstractDifferentiation.HigherOrderBackend
 
 ## Derivatives
 
-The following list of functions can be used to request the derivative, gradient, Jacobian or Hessian without the function value.
+The following list of functions can be used to request the derivative, gradient, Jacobian, second derivative or Hessian without the function value.
 
 ```@docs
 AbstractDifferentiation.derivative
 AbstractDifferentiation.gradient
 AbstractDifferentiation.jacobian
+AbstractDifferentiation.second_derivative
 AbstractDifferentiation.hessian
 ```
 
 ## Value and derivatives
 
-The following list of functions can be used to request the function value along with its derivative, gradient, Jacobian or Hessian. You can also request the function value, its gradient and Hessian for single-input functions.
+The following list of functions can be used to request the function value along with its derivative, gradient, Jacobian, second derivative, or Hessian. You can also request the function value, its derivative (or its gradient) and its second derivative (or Hessian) for single-input functions.
 
 ```@docs
 AbstractDifferentiation.value_and_derivative
 AbstractDifferentiation.value_and_gradient
 AbstractDifferentiation.value_and_jacobian
+AbstractDifferentiation.value_and_second_derivative
 AbstractDifferentiation.value_and_hessian
+AbstractDifferentiation.value_and_derivatives
 AbstractDifferentiation.value_gradient_and_hessian
 ```
 
