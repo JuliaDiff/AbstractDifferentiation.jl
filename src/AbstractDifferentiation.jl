@@ -236,7 +236,7 @@ function pushforward_function(ab::AbstractBackend, f, xs...)
                 newx = only(xs) + ds * only(xds)
                 return f(newx)
             end
-        end,
+        end
         return jacobian(lowest(ab), pf_aux, _zero.(xs, ds)...)
     end
     return pf
