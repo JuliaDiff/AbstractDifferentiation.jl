@@ -54,11 +54,7 @@ The function returns a `Tuple` of derivatives, one for each element in `xs`.
 """
 function derivative(ab::AbstractBackend, f, xs::Number...)
     der = getindex.(jacobian(lowest(ab), f, xs...), 1)
-    if der isa Tuple
-        return der
-    else
-        return (der,)
-    end
+    return der
 end
 
 """
@@ -93,10 +89,6 @@ Compute the Hessian of `f` wrt the input `x` using the backend `ab`.
 The function returns a single matrix because `hessian` currently only supports a single input.
 """
 function hessian(ab::AbstractBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
     return jacobian(second_lowest(ab), x -> begin
         gradient(lowest(ab), f, x)[1] # gradient returns a tuple
     end, x)
@@ -147,32 +139,20 @@ Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = 
 See also [`AbstractDifferentiation.hessian`](@ref).    
 """
 function value_and_hessian(ab::AbstractBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
     value = f(x)
     hess = jacobian(second_lowest(ab), _x -> begin
         g = gradient(lowest(ab), f, _x)
         return g[1] # gradient returns a tuple
     end, x)
-
     return value, hess
 end
 
 function value_and_hessian(ab::HigherOrderBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
     value = f(x)
     hess = jacobian(second_lowest(ab), (_x,) -> begin
         g = gradient(lowest(ab), f, _x)
         return g[1]  # gradient returns a tuple
     end, x)
-
     return value, hess
 end
 
@@ -184,11 +164,6 @@ Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g =
 See also [`AbstractDifferentiation.gradient`](@ref) and [`AbstractDifferentiation.hessian`](@ref).
 """
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
     value = f(x)
     grads, hess = value_and_jacobian(
         second_lowest(ab), _x -> begin
@@ -196,16 +171,10 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, x)
             return g[1] # gradient returns a tuple
         end, x
     )
-
     return value, (grads,), hess
 end
 
 function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
     value = f(x)
     grads, hess = value_and_jacobian(
         second_lowest(ab), _x -> begin
@@ -213,7 +182,6 @@ function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
             return g[1] # gradient returns a tuple
         end, x
     )
-
     return value, (grads,), hess
 end
 
@@ -222,26 +190,18 @@ end
     
 Return the pushforward function `pf` of the function `f` at the inputs `xs` using backend `ab`. 
     
-The pushfoward function `pf` accepts as input a `Tuple` of tangents, one for each element in `xs`.
-If `xs` consists of a single element, `pf` can also accept a single tangent instead of a 1-tuple.
+The pushfoward function `pf` accepts as inputs one tangent for each element in `xs`.
 """
 function pushforward_function(ab::AbstractBackend, f, xs...)
-    return (ds) -> begin
-        return jacobian(
-            lowest(ab),
-            (xds...,) -> begin
-                if ds isa Tuple
-                    @assert length(xs) == length(ds)
-                    newxs = xs .+ ds .* xds
-                    return f(newxs...)
-                else
-                    newx = only(xs) + ds * only(xds)
-                    return f(newx)
-                end
-            end,
-            _zero.(xs, ds)...,
-        )
+    function pf(ds...)
+        function pf_gradient(xds...)
+            @assert length(xs) == length(ds)
+            newxs = xs .+ ds .* xds
+            return f(newxs...)
+        end
+        return jacobian(lowest(ab), pf_gradient, _zero.(xs, ds)...)
     end
+    return pf
 end
 
 """
@@ -254,16 +214,12 @@ See also [`AbstractDifferentiation.pushforward_function`](@ref).
 function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
-    pf_function = pushforward_function(lowest(ab), f, xs...)
-
-    return ds -> begin
-        if !(ds isa Tuple)
-            ds = (ds,)
-        end
+    pf = pushforward_function(lowest(ab), f, xs...)
+    function value_and_pf(ds...)
         @assert length(ds) == n
-        pf = pf_function(ds)
-        return value, pf
+        return value, pf(ds)
     end
+    return value_and_pf
 end
 
 _zero(::Number, d::Number) = zero(d)
@@ -287,8 +243,7 @@ end
 
 Return the pullback function `pb` of the function `f` at the inputs `xs` using backend `ab`. 
     
-The pullback function `pb` accepts as input a `Tuple` of cotangents, one for each output of `f`.
-If `f` has a single output, `pb` can also accept a single input instead of a 1-tuple.
+The pullback function `pb` accepts as inputs one cotangent for each output of `f`.
 """
 function pullback_function(ab::AbstractBackend, f, xs...)
     _, pbf = value_and_pullback_function(ab, f, xs...)
@@ -304,19 +259,15 @@ See also [`AbstractDifferentiation.pullback_function`](@ref).
 """
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
-    function pullback_function(ws)
-        function pullback_gradient_function(_xs...)
+    function pb(ws...)
+        function pb_gradient(_xs...)
             vs = f(_xs...)
-            if ws isa Tuple
-                @assert length(vs) == length(ws)
-                return sum(Base.splat(_dot), zip(ws, vs))
-            else
-                return _dot(vs, ws)
-            end
+            @assert length(vs) == length(ws)
+            return sum(Base.splat(_dot), zip(ws, vs))
         end
-        return gradient(lowest(ab), pullback_gradient_function, xs...)
+        return gradient(lowest(ab), pb_gradient, xs...)
     end
-    return value, pullback_function
+    return value, pb
 end
 
 struct LazyDerivative{B,F,X}
