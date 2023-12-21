@@ -193,13 +193,18 @@ Return the pushforward function `pf` of the function `f` at the inputs `xs` usin
 The pushfoward function `pf` accepts as inputs one tangent for each element in `xs`.
 """
 function pushforward_function(ab::AbstractBackend, f, xs...)
-    function pf(ds...)
-        function pf_gradient(xds...)
-            @assert length(xs) == length(ds)
-            newxs = xs .+ ds .* xds
-            return f(newxs...)
-        end
-        return jacobian(lowest(ab), pf_gradient, _zero.(xs, ds)...)
+    function pf(ds)
+        function pf_aux(xds...)
+            if ds isa Tuple
+                @assert length(xs) == length(ds)
+                newxs = xs .+ ds .* xds
+                return f(newxs...)
+            else
+                newx = only(xs) + ds * only(xds)
+                return f(newx)
+            end
+        end,
+        return jacobian(lowest(ab), pf_aux, _zero.(xs, ds)...)
     end
     return pf
 end
@@ -207,19 +212,28 @@ end
 """
     AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Return a function that, given tangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pushforward function `AD.pushforward_function(ab, f, xs...)` applied to `ts`.
+Return a function `vpf` which, given tangents `ts`, computes the tuple `(v, p) = vpf(ts)` composed of
+    
+- the function value `v = f(xs...)`
+- the pushforward value `p = pf(ts)` given by the pushforward function `pf = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
 See also [`AbstractDifferentiation.pushforward_function`](@ref).
+
+!!! warning
+    This name should be understood as "(value and pushforward) function", and thus is not aligned with the reverse mode counterpart [`AbstractDifferentiation.value_and_pullback_function`](@ref).
 """
 function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
     pf = pushforward_function(lowest(ab), f, xs...)
-    function value_and_pf(ds...)
+    function vpf(ds)
+        if !(ds isa Tuple)
+            ds = (ds,)
+        end
         @assert length(ds) == n
         return value, pf(ds)
     end
-    return value_and_pf
+    return vpf
 end
 
 _zero(::Number, d::Number) = zero(d)
@@ -246,26 +260,29 @@ Return the pullback function `pb` of the function `f` at the inputs `xs` using b
 The pullback function `pb` accepts as inputs one cotangent for each output of `f`.
 """
 function pullback_function(ab::AbstractBackend, f, xs...)
-    _, pbf = value_and_pullback_function(ab, f, xs...)
-    return pbf
+    _, pb = value_and_pullback_function(ab, f, xs...)
+    return pb
 end
 
 """
     AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)
 
-Return a function that, given cotangents `ts`, computes the tuple `(v, p)` of the function value `v = f(xs...)` and the output `p` of the pullback function `AD.pullback_function(ab, f, xs...)` applied to `ts`.
+Return a tuple `(v, pb)` of the function value `v = f(xs...)` and the pullback function `pb = AD.pullback_function(ab, f, xs...)`.
 
 See also [`AbstractDifferentiation.pullback_function`](@ref).
+
+!!! warning
+    This name should be understood as "value and (pullback function)", and thus is not aligned with the forward mode counterpart [`AbstractDifferentiation.value_and_pushforward_function`](@ref).
 """
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
-    function pb(ws...)
-        function pb_gradient(_xs...)
+    function pb(ws)
+        function pb_aux(_xs...)
             vs = f(_xs...)
             @assert length(vs) == length(ws)
             return sum(Base.splat(_dot), zip(ws, vs))
         end
-        return gradient(lowest(ab), pb_gradient, xs...)
+        return gradient(lowest(ab), pb_aux, xs...)
     end
     return value, pb
 end
