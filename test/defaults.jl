@@ -22,7 +22,7 @@ end
 FDMBackend2() = FDMBackend2(central_fdm(5, 1))
 const fdm_backend2 = FDMBackend2()
 AD.@primitive function pushforward_function(ab::FDMBackend2, f, xs...)
-    return function (vs)
+    return function (vs...)
         ws = FDM.jvp(ab.alg, f, tuple.(xs, vs)...)
         return length(xs) == 1 ? (ws,) : ws
     end
@@ -35,7 +35,7 @@ FDMBackend3() = FDMBackend3(central_fdm(5, 1))
 const fdm_backend3 = FDMBackend3()
 AD.@primitive function value_and_pullback_function(ab::FDMBackend3, f, xs...)
     value = f(xs...)
-    function fd3_pullback(vs)
+    function fd3_pullback(vs...)
         # Supports only single output
         _vs = vs isa AbstractVector ? vs : only(vs)
         return FDM.j′vp(ab.alg, f, _vs, xs...)
@@ -69,16 +69,12 @@ struct ForwardDiffBackend2 <: AD.AbstractForwardMode end
 const forwarddiff_backend2 = ForwardDiffBackend2()
 AD.@primitive function pushforward_function(ab::ForwardDiffBackend2, f, xs...)
     # jvp = f'(x)*v, i.e., differentiate f(x + h*v) wrt h at 0
-    return function (vs)
-        if xs isa Tuple
-            @assert length(xs) <= 2
-            if length(xs) == 1
-                (ForwardDiff.derivative(h -> f(xs[1] + h * vs[1]), 0),)
-            else
-                ForwardDiff.derivative(h -> f(xs[1] + h * vs[1], xs[2] + h * vs[2]), 0)
-            end
+    return function (vs...)
+        @assert length(xs) <= 2
+        if length(xs) == 1
+            (ForwardDiff.derivative(h -> f(xs[1] + h * vs[1]), 0),)
         else
-            ForwardDiff.derivative(h -> f(xs + h * vs), 0)
+            ForwardDiff.derivative(h -> f(xs[1] + h * vs[1], xs[2] + h * vs[2]), 0)
         end
     end
 end
@@ -91,8 +87,8 @@ const zygote_backend1 = ZygoteBackend1()
 AD.@primitive function value_and_pullback_function(ab::ZygoteBackend1, f, xs...)
     # Supports only single output
     value, back = Zygote.pullback(f, xs...)
-    function zygote_pullback(vs)
-        _vs = vs isa AbstractVector ? vs : only(vs)
+    function zygote_pullback(vs...)
+        _vs = only(vs)
         return back(_vs)
     end
     return value, zygote_pullback

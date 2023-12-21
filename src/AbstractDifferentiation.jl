@@ -40,7 +40,7 @@ second_lowest(b::HigherOrderBackend) = lowest(reduce_order(b))
 
 # If the primal value is in y, extract it.
 # Otherwise, re-compute it, e.g. in finite diff.
-primal_value(::AbstractFiniteDifference, ::Any, f, xs) = f(xs...)
+primal_value(::AbstractFiniteDifference, ::Any, f, xs) = f(xs...)  # TODO: why not xs...
 primal_value(::AbstractBackend, ys, ::Any, ::Any) = primal_value(ys)
 primal_value(x::Tuple) = map(primal_value, x)
 primal_value(x) = x
@@ -193,16 +193,11 @@ Return the pushforward function `pf` of the function `f` at the inputs `xs` usin
 The pushfoward function `pf` accepts as inputs one tangent for each element in `xs`.
 """
 function pushforward_function(ab::AbstractBackend, f, xs...)
-    function pf(ds)
+    function pf(ds...)
         function pf_aux(xds...)
-            if ds isa Tuple
-                @assert length(xs) == length(ds)
-                newxs = xs .+ ds .* xds
-                return f(newxs...)
-            else
-                newx = only(xs) + ds * only(xds)
-                return f(newx)
-            end
+            @assert length(xs) == length(ds)
+            newxs = xs .+ ds .* xds
+            return f(newxs...)
         end
         return jacobian(lowest(ab), pf_aux, _zero.(xs, ds)...)
     end
@@ -215,7 +210,7 @@ end
 Return a function `vpf` which, given tangents `ts`, computes the tuple `(v, p) = vpf(ts)` composed of
     
 - the function value `v = f(xs...)`
-- the pushforward value `p = pf(ts)` given by the pushforward function `pf = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
+- the pushforward value `p = pf(ts...)` given by the pushforward function `pf = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
 See also [`AbstractDifferentiation.pushforward_function`](@ref).
 
@@ -226,10 +221,7 @@ function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
     pf = pushforward_function(lowest(ab), f, xs...)
-    function vpf(ds)
-        if !(ds isa Tuple)
-            ds = (ds,)
-        end
+    function vpf(ds...)
         @assert length(ds) == n
         return value, pf(ds)
     end
@@ -276,7 +268,7 @@ See also [`AbstractDifferentiation.pullback_function`](@ref).
 """
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
-    function pb(ws)
+    function pb(ws...)
         function pb_aux(_xs...)
             vs = f(_xs...)
             @assert length(vs) == length(ws)
@@ -576,14 +568,14 @@ function define_pushforward_function_and_friends(fdef)
             if eltype(identity_like) <: Tuple{Vararg{Union{AbstractMatrix,Number}}}
                 return map(identity_like) do identity_like_i
                     return mapreduce(hcat, $(_eachcol).(identity_like_i)...) do (cols...)
-                        pff(cols)
+                        pff(cols...)
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
                 # needed for the computation of the Hessian and Jacobian
                 ret = hcat.(mapslices(identity_like[1]; dims=1) do cols
                     # cols loop over basis states   
-                    pf = pff((cols,))
+                    pf = pff(cols)
                     if typeof(pf) <: AbstractVector
                         # to make the hcat. work / get correct matrix-like, non-flat output dimension
                         return (pf,)
@@ -612,7 +604,7 @@ function define_value_and_pullback_function_and_friends(fdef)
             if eltype(identity_like) <: Tuple{Vararg{AbstractMatrix}}
                 return map(identity_like) do identity_like_i
                     return mapreduce(vcat, $(_eachcol).(identity_like_i)...) do (cols...)
-                        pbf(cols)'
+                        pbf(cols...)'
                     end
                 end
             elseif eltype(identity_like) <: AbstractMatrix
@@ -620,7 +612,7 @@ function define_value_and_pullback_function_and_friends(fdef)
                 # value is a (grad,). Then, identity_like is a (matrix,).
                 # cols loops over columns of the matrix  
                 return vcat.(mapslices(identity_like[1]; dims=1) do cols
-                    adjoint.(pbf((cols,)))
+                    adjoint.(pbf(cols))
                 end...)
             else
                 return adjoint.(pbf(identity_like))

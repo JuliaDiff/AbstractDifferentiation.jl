@@ -19,8 +19,8 @@ AD.primal_value(x::AbstractArray{<:Tracker.TrackedReal}) = Tracker.data.(x)
 AD.@primitive function value_and_pullback_function(ba::AD.TrackerBackend, f, xs...)
     _value, back = Tracker.forward(f, xs...)
     value = map(Tracker.data, _value)
-    function tracker_pullback(ws)
-        _ws = if ws isa Tuple && !(value isa Tuple)
+    function tracker_pullback(ws...)
+        _ws = if !(value isa Tuple)
             only(ws)
         else
             ws

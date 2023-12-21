@@ -26,9 +26,9 @@ function AD.ForwardDiffBackend(; chunksize::Union{Val,Nothing}=nothing)
 end
 
 AD.@primitive function pushforward_function(ba::AD.ForwardDiffBackend, f, xs...)
-    return function pushforward(vs)
+    return function pushforward(vs...)
         if length(xs) == 1
-            v = vs isa Tuple ? only(vs) : vs
+            v = only(vs)
             return (ForwardDiff.derivative(h -> f(step_toward(xs[1], v, h)), 0),)
         else
             return ForwardDiff.derivative(h -> f(step_toward.(xs, vs, h)...), 0)

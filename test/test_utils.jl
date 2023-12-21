@@ -205,13 +205,14 @@ function test_jvp(
                 identity_like_i .* v
             end
 
-            pf1 = map(v -> AD.pushforward_function(backend, fjac, xvec, yvec)(v), vaug)
+            pf1 = map(v -> AD.pushforward_function(backend, fjac, xvec, yvec)(v...), vaug)
             ((valvec1, pf2x), (valvec2, pf2y)) = map(
-                v -> AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v), vaug
+                v -> AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v...),
+                vaug,
             )
         else
-            pf1 = AD.pushforward_function(backend, fjac, xvec, yvec)(v)
-            valvec, pf2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v)
+            pf1 = AD.pushforward_function(backend, fjac, xvec, yvec)(v...)
+            valvec, pf2 = AD.value_and_pushforward_function(backend, fjac, xvec, yvec)(v...)
             ((valvec1, pf2x), (valvec2, pf2y)) = (valvec, pf2[1]), (valvec, pf2[2])
         end
 
