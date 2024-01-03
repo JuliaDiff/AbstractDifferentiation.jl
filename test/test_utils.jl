@@ -174,7 +174,7 @@ function test_second_derivatives(backend; multiple_inputs=false, test_types=true
     end
     @test valscalar == fder(xscalar, yscalar)
     @test norm.(dder2 .- dder1) == (0,)
-    valscalar, der, dder3 = AD.value_and_derivatives(
+    valscalar, der, dder3 = AD.value_derivative_and_second_derivative(
         backend, x -> fder(x, yscalar), xscalar
     )
     if test_types

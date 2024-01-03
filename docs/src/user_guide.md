@@ -73,7 +73,7 @@ AbstractDifferentiation.value_and_gradient
 AbstractDifferentiation.value_and_jacobian
 AbstractDifferentiation.value_and_second_derivative
 AbstractDifferentiation.value_and_hessian
-AbstractDifferentiation.value_and_derivatives
+AbstractDifferentiation.value_derivative_and_second_derivative
 AbstractDifferentiation.value_gradient_and_hessian
 ```
 

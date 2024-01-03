@@ -90,7 +90,7 @@ function AD.value_and_hessian(ba::AD.ForwardDiffBackend, f, x)
     return DiffResults.value(result), (DiffResults.hessian(result),)
 end
 
-function AD.value_and_derivatives(ba::AD.ForwardDiffBackend, f, x::Real)
+function AD.value_derivative_and_second_derivative(ba::AD.ForwardDiffBackend, f, x::Real)
     T = typeof(ForwardDiff.Tag(f, typeof(x)))
     xdual = ForwardDiff.Dual{T}(x, one(x))
     T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))

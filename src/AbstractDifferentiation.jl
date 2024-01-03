@@ -206,11 +206,11 @@ function value_and_hessian(ab::HigherOrderBackend, f, x)
 end
 
 """
-    AD.value_and_derivatives(ab::AD.AbstractBackend, f, x)
+    AD.value_derivative_and_second_derivative(ab::AD.AbstractBackend, f, x)
 
 Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.secondderivative(ab, f, x)`.
 """
-function value_and_derivatives(ab::AbstractBackend, f, x)
+function value_derivative_and_second_derivative(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
         x = only(x)
