@@ -220,14 +220,14 @@ end
 """
     AD.pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Return the pushforward function `pf` of the function `f` at the inputs `xs` using backend `ab`. 
+Return the pushforward function `pff` of the function `f` at the inputs `xs` using backend `ab`. 
     
-The pushfoward function `pf` accepts as input a `Tuple` of tangents, one for each element in `xs`.
-If `xs` consists of a single element, `pf` can also accept a single tangent instead of a 1-tuple.
+The pushfoward function `pff` accepts as input a `Tuple` of tangents, one for each element in `xs`.
+If `xs` consists of a single element, `pff` can also accept a single tangent instead of a 1-tuple.
 """
 function pushforward_function(ab::AbstractBackend, f, xs...)
-    function pf(ds)
-        function pf_aux(xds...)
+    function pff(ds)
+        function pff_aux(xds...)
             if ds isa Tuple
                 @assert length(xs) == length(ds)
                 newxs = xs .+ ds .* xds
@@ -237,18 +237,18 @@ function pushforward_function(ab::AbstractBackend, f, xs...)
                 return f(newx)
             end
         end
-        return jacobian(lowest(ab), pf_aux, _zero.(xs, ds)...)
+        return jacobian(lowest(ab), pff_aux, _zero.(xs, ds)...)
     end
-    return pf
+    return pff
 end
 
 """
     AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
     
-Return a function `vpf` which, given tangents `ts`, computes the tuple `(v, p) = vpf(ts)` composed of
+Return a single function `vpff` which, given tangents `ts`, computes the tuple `(v, p) = vpff(ts)` composed of
     
 - the function value `v = f(xs...)`
-- the pushforward value `p = pf(ts)` given by the pushforward function `pf = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
+- the pushforward value `p = pff(ts)` given by the pushforward function `pff = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
 
 See also [`AbstractDifferentiation.pushforward_function`](@ref).
 
@@ -258,16 +258,16 @@ See also [`AbstractDifferentiation.pushforward_function`](@ref).
 function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
-    pf = pushforward_function(lowest(ab), f, xs...)
+    pff = pushforward_function(lowest(ab), f, xs...)
 
-    function vpf(ds)
+    function vpff(ds)
         if !(ds isa Tuple)
             ds = (ds,)
         end
         @assert length(ds) == n
-        return value, pf(ds)
+        return value, pff(ds)
     end
-    return vpf
+    return vpff
 end
 
 _zero(::Number, d::Number) = zero(d)
@@ -289,20 +289,20 @@ end
 """
     AD.pullback_function(ab::AD.AbstractBackend, f, xs...)
 
-Return the pullback function `pb` of the function `f` at the inputs `xs` using backend `ab`. 
+Return the pullback function `pbf` of the function `f` at the inputs `xs` using backend `ab`. 
     
-The pullback function `pb` accepts as input a `Tuple` of cotangents, one for each output of `f`.
-If `f` has a single output, `pb` can also accept a single input instead of a 1-tuple.
+The pullback function `pbf` accepts as input a `Tuple` of cotangents, one for each output of `f`.
+If `f` has a single output, `pbf` can also accept a single input instead of a 1-tuple.
 """
 function pullback_function(ab::AbstractBackend, f, xs...)
-    _, pb = value_and_pullback_function(ab, f, xs...)
-    return pb
+    _, pbf = value_and_pullback_function(ab, f, xs...)
+    return pbf
 end
 
 """
     AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)
 
-Return a tuple `(v, pb)` of the function value `v = f(xs...)` and the pullback function `pb = AD.pullback_function(ab, f, xs...)`.
+Return a tuple `(v, pbf)` of the function value `v = f(xs...)` and the pullback function `pbf = AD.pullback_function(ab, f, xs...)`.
 
 See also [`AbstractDifferentiation.pullback_function`](@ref).
 
@@ -311,8 +311,8 @@ See also [`AbstractDifferentiation.pullback_function`](@ref).
 """
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
-    function pb(ws)
-        function pb_aux(_xs...)
+    function pbf(ws)
+        function pbf_aux(_xs...)
             vs = f(_xs...)
             if ws isa Tuple
                 @assert length(vs) == length(ws)
@@ -321,9 +321,9 @@ function value_and_pullback_function(ab::AbstractBackend, f, xs...)
                 return _dot(vs, ws)
             end
         end
-        return gradient(lowest(ab), pb_aux, xs...)
+        return gradient(lowest(ab), pbf_aux, xs...)
     end
-    return value, pb
+    return value, pbf
 end
 
 struct LazyDerivative{B,F,X}
