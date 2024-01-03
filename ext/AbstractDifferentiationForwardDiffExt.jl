@@ -79,7 +79,8 @@ function AD.value_and_second_derivative(ba::AD.ForwardDiffBackend, f, x::Real)
     xdual = ForwardDiff.Dual{T}(x, one(x))
     T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))
     ydual = f(ForwardDiff.Dual{T2}(xdual, one(xdual)))
-    return ForwardDiff.value(T, ForwardDiff.value(T2, ydual)), (ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1),)
+    return ForwardDiff.value(T, ForwardDiff.value(T2, ydual)),
+    (ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1),)
 end
 
 function AD.value_and_hessian(ba::AD.ForwardDiffBackend, f, x)
