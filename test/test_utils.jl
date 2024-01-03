@@ -151,16 +151,16 @@ function test_second_derivatives(backend; multiple_inputs=false, test_types=true
     else
         # explicit test that AbstractDifferentiation throws an error
         # don't support tuple of second derivatives
-        @test_throws ArgumentError AD.second_derivative(
+        @test_throws ArgumentError AD.secondderivative(
             backend, x -> fder(x, yscalar), (xscalar, yscalar)
         )
-        @test_throws MethodError AD.second_derivative(
+        @test_throws MethodError AD.secondderivative(
             backend, x -> fder(x, yscalar), xscalar, yscalar
         )
     end
 
     # test if single input (no tuple works)
-    dder1 = AD.second_derivative(backend, x -> fder(x, yscalar), xscalar)
+    dder1 = AD.secondderivative(backend, x -> fder(x, yscalar), xscalar)
     if test_types
         @test dder1[1] isa Float64
     end

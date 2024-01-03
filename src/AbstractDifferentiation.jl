@@ -86,13 +86,13 @@ function jacobian(ab::HigherOrderBackend, f, xs...)
 end
 
 """
-    AD.second_derivative(ab::AD.AbstractBackend, f, xs...)
+    AD.secondderivative(ab::AD.AbstractBackend, f, xs...)
 
 Compute the second derivative of `f` with respect to the input `x` using the backend `ab`.
 
-The function returns a single value because `second_derivative` currently only supports a single input.
+The function returns a single value because `secondderivative` currently only supports a single input.
 """
-function second_derivative(ab::AbstractBackend, f, x)
+function secondderivative(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of second derivative for functions with single input argument
         x = only(x)
@@ -162,10 +162,10 @@ end
 
 Return the tuple `(v, d2)` of the function value `v = f(x)` and the second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.hessian(ab, f, x)`.
 
-See also [`AbstractDifferentiation.second_derivative`](@ref)
+See also [`AbstractDifferentiation.secondderivative`](@ref)
 """
 function value_and_second_derivative(ab::AbstractBackend, f, x)
-    return f(x), second_derivative(ab, f, x)
+    return f(x), secondderivative(ab, f, x)
 end
 
 """
@@ -208,7 +208,7 @@ end
 """
     AD.value_and_derivatives(ab::AD.AbstractBackend, f, x)
 
-Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.second_derivative(ab, f, x)`.
+Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.secondderivative(ab, f, x)`.
 """
 function value_and_derivatives(ab::AbstractBackend, f, x)
     if x isa Tuple
@@ -217,14 +217,14 @@ function value_and_derivatives(ab::AbstractBackend, f, x)
     end
 
     value = f(x)
-    deriv, second_deriv = value_and_derivative(
+    deriv, secondderiv = value_and_derivative(
         second_lowest(ab), _x -> begin
             d = derivative(lowest(ab), f, _x)
             return d[1] # derivative returns a tuple
         end, x
     )
 
-    return value, (deriv,), second_deriv
+    return value, (deriv,), secondderiv
 end
 
 """
