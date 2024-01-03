@@ -211,7 +211,20 @@ end
 Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.second_derivative(ab, f, x)`.
 """
 function value_and_derivatives(ab::AbstractBackend, f, x)
-    return value_and_derivative(ab, f, x)..., second_derivative(ab, f, x)[1]
+    if x isa Tuple
+        # only support computation of Hessian for functions with single input argument
+        x = only(x)
+    end
+
+    value = f(x)
+    deriv, second_deriv = value_and_derivative(
+        second_lowest(ab), _x -> begin
+            d = derivative(lowest(ab), f, _x)
+            return d[1] # derivative returns a tuple
+        end, x
+    )
+
+    return value, (deriv,), second_deriv
 end
 
 """

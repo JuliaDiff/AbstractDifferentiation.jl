@@ -64,7 +64,7 @@ end
 function AD.value_and_derivative(::AD.ForwardDiffBackend, f, x::Real)
     T = typeof(ForwardDiff.Tag(f, typeof(x)))
     ydual = f(ForwardDiff.Dual{T}(x, one(x)))
-    return ForwardDiff.value(T, ydual), (ForwardDiff.extract_derivative(T, ydual),)
+    return ForwardDiff.value(T, ydual), (ForwardDiff.partials(T, ydual, 1),)
 end
 
 function AD.value_and_gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
@@ -76,8 +76,10 @@ end
 
 function AD.value_and_second_derivative(ba::AD.ForwardDiffBackend, f, x::Real)
     T = typeof(ForwardDiff.Tag(f, typeof(x)))
-    ydual, ddual = AD.value_and_derivative(ba, f, ForwardDiff.Dual{T}(x, one(x)))
-    return ForwardDiff.value(T, ydual), (ForwardDiff.extract_derivative(T, ddual[1]),)
+    xdual = ForwardDiff.Dual{T}(x, one(x))
+    T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))
+    ydual = f(ForwardDiff.Dual{T2}(xdual, one(xdual)))
+    return ForwardDiff.value(T, ForwardDiff.value(T2, ydual)), (ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1),)
 end
 
 function AD.value_and_hessian(ba::AD.ForwardDiffBackend, f, x)
@@ -89,10 +91,12 @@ end
 
 function AD.value_and_derivatives(ba::AD.ForwardDiffBackend, f, x::Real)
     T = typeof(ForwardDiff.Tag(f, typeof(x)))
-    ydual, ddual = AD.value_and_derivative(ba, f, ForwardDiff.Dual{T}(x, one(x)))
-    return ForwardDiff.value(T, ydual),
-    (ForwardDiff.value(T, ddual[1]),),
-    (ForwardDiff.extract_derivative(T, ddual[1]),)
+    xdual = ForwardDiff.Dual{T}(x, one(x))
+    T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))
+    ydual = f(ForwardDiff.Dual{T2}(xdual, one(xdual)))
+    return ForwardDiff.value(T, ForwardDiff.value(T2, ydual)),
+    (ForwardDiff.partials(T, ForwardDiff.value(T2, ydual), 1),),
+    (ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1),)
 end
 
 @inline step_toward(x::Number, v::Number, h) = x + h * v
