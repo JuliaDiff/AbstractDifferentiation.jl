@@ -21,6 +21,9 @@ using Zygote
         @testset "j′vp" begin
             test_j′vp(backend)
         end
+        @testset "Second derivative" begin
+            test_second_derivatives(backend)
+        end
         @testset "Lazy Derivative" begin
             test_lazy_derivatives(backend)
         end
