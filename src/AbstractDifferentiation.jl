@@ -161,21 +161,6 @@ function value_and_hessian(ab::AbstractBackend, f, x)
     return value, hess
 end
 
-function value_and_hessian(ab::HigherOrderBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
-    value = f(x)
-    hess = jacobian(second_lowest(ab), (_x,) -> begin
-        g = gradient(lowest(ab), f, _x)
-        return g[1]  # gradient returns a tuple
-    end, x)
-
-    return value, hess
-end
-
 """
     AD.value_gradient_and_hessian(ab::AD.AbstractBackend, f, x)
     
@@ -184,23 +169,6 @@ Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g =
 See also [`AbstractDifferentiation.gradient`](@ref) and [`AbstractDifferentiation.hessian`](@ref).
 """
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
-
-    value = f(x)
-    grads, hess = value_and_jacobian(
-        second_lowest(ab), _x -> begin
-            g = gradient(lowest(ab), f, _x)
-            return g[1] # gradient returns a tuple
-        end, x
-    )
-
-    return value, (grads,), hess
-end
-
-function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
         x = only(x)
