@@ -59,7 +59,7 @@ The following list of functions can be used to request the derivative, gradient,
 AbstractDifferentiation.derivative
 AbstractDifferentiation.gradient
 AbstractDifferentiation.jacobian
-AbstractDifferentiation.secondderivative
+AbstractDifferentiation.second_derivative
 AbstractDifferentiation.hessian
 ```
 
