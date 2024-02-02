@@ -153,7 +153,6 @@ function test_second_derivatives(backend; test_types=true)
     @test_throws MethodError AD.second_derivative(
         backend, x -> fder(x, yscalar), xscalar, yscalar
     )
-    end
 
     # test if single input (no tuple works)
     dder1 = AD.second_derivative(backend, x -> fder(x, yscalar), xscalar)
@@ -179,7 +178,7 @@ function test_second_derivatives(backend; test_types=true)
         @test only(dder3) isa Float64
     end
     @test valscalar == fder(xscalar, yscalar)
-    @test der == AD.derivative(backend, x -> fder(x, yscalar), xscalar))
+    @test der == AD.derivative(backend, x -> fder(x, yscalar), xscalar)
     @test dder3 == dder1
 end
 
