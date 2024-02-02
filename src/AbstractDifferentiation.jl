@@ -86,7 +86,7 @@ function jacobian(ab::HigherOrderBackend, f, xs...)
 end
 
 """
-    AD.second_derivative(ab::AD.AbstractBackend, f, xs...)
+    AD.second_derivative(ab::AD.AbstractBackend, f, x)
 
 Compute the second derivative of `f` with respect to the input `x` using the backend `ab`.
 
@@ -160,7 +160,7 @@ end
 """
     AD.value_and_second_derivative(ab::AD.AbstractBackend, f, x)
 
-Return the tuple `(v, d2)` of the function value `v = f(x)` and the second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.hessian(ab, f, x)`.
+Return the tuple `(v, d2)` of the function value `v = f(x)` and the second derivative `d2 = AD.second_derivative(ab, f, x)`.
 
 See also [`AbstractDifferentiation.second_derivative`](@ref)
 """
@@ -208,7 +208,7 @@ end
 """
     AD.value_derivative_and_second_derivative(ab::AD.AbstractBackend, f, x)
 
-Return the tuple `(v, d, d2)` of the function value `v = f(x)` and the first and second derivatives `d = AD.derivative(ab, f, x)` and `d2 = AD.second_derivative(ab, f, x)`.
+Return the tuple `(v, d, d2)` of the function value `v = f(x)`, the first derivative `d = AD.derivative(ab, f, x)`, and the second derivative `d2 = AD.second_derivative(ab, f, x)`.
 """
 function value_derivative_and_second_derivative(ab::AbstractBackend, f, x)
     if x isa Tuple
