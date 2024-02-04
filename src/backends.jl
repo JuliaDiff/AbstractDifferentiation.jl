@@ -71,13 +71,14 @@ end
 ruleconfig(ba::ReverseRuleConfigBackend) = ba.ruleconfig
 
 """
-    ZygoteBackend()
+    ZygoteBackend
 
 Create an AD backend that uses reverse mode with [Zygote.jl](https://github.com/FluxML/Zygote.jl).
 
-It is a special case of [`ReverseRuleConfigBackend`](@ref).
+Alternatively, you can perform AD with Zygote using a special [`ReverseRuleConfigBackend`](@ref), namely `ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())`.
+Note, however, that the behaviour of this backend is not equivalent to `ZygoteBackend()` since the former uses a generic implementation of jacobian etc. for ChainRules-compatible AD backends whereas `ZygoteBackend` uses implementations in Zygote.jl.
 
 !!! note
     To be able to use this backend, you have to load Zygote.
 """
-function ZygoteBackend end
+struct ZygoteBackend <: AbstractReverseMode end
