@@ -6,6 +6,7 @@ Random.seed!(1234)
 fder(x, y) = exp(y) * x + y * log(x)
 dfderdx(x, y) = exp(y) + y * 1 / x
 dfderdy(x, y) = exp(y) * x + log(x)
+dfderdxdx(x, y) = -y / x^2
 
 fgrad(x, y) = prod(x) + sum(y ./ (1:length(y)))
 dfgraddx(x, y) = prod(x) ./ x
@@ -141,6 +142,44 @@ function test_jacobians(backend; multiple_inputs=true, test_types=true)
     @test isapprox(jacb[1], jac_exact[2], rtol=1e-10)
     @test xvec == xvec2
     @test yvec == yvec2
+end
+
+function test_second_derivatives(backend; test_types=true)
+    # explicit test that AbstractDifferentiation throws an error
+    # don't support tuple of second derivatives
+    @test_throws ArgumentError AD.second_derivative(
+        backend, x -> fder(x, yscalar), (xscalar, yscalar)
+    )
+    @test_throws MethodError AD.second_derivative(
+        backend, x -> fder(x, yscalar), xscalar, yscalar
+    )
+
+    # test if single input (no tuple works)
+    dder1 = AD.second_derivative(backend, x -> fder(x, yscalar), xscalar)
+    if test_types
+        @test only(dder1) isa Float64
+    end
+    @test dfderdxdx(xscalar, yscalar) ≈ only(dder1) atol = 1e-8
+    valscalar, dder2 = AD.value_and_second_derivative(
+        backend, x -> fder(x, yscalar), xscalar
+    )
+    if test_types
+        @test valscalar isa Float64
+        @test only(dder2) isa Float64
+    end
+    @test valscalar == fder(xscalar, yscalar)
+    @test dder2 == dder1
+    valscalar, der, dder3 = AD.value_derivative_and_second_derivative(
+        backend, x -> fder(x, yscalar), xscalar
+    )
+    if test_types
+        @test valscalar isa Float64
+        @test only(der) isa Float64
+        @test only(dder3) isa Float64
+    end
+    @test valscalar == fder(xscalar, yscalar)
+    @test der == AD.derivative(backend, x -> fder(x, yscalar), xscalar)
+    @test dder3 == dder1
 end
 
 function test_hessians(backend; multiple_inputs=false, test_types=true)
