@@ -4,7 +4,10 @@ using Test
 using Zygote
 
 @testset "ReverseRuleConfigBackend(ZygoteRuleConfig())" begin
-    backends = [@inferred(AD.ZygoteBackend())]
+    backends = [
+        @inferred(AD.ZygoteBackend()),
+        @inferred(AD.ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig()))
+    ]
     @testset for backend in backends
         @testset "Derivative" begin
             test_derivatives(backend)
@@ -37,7 +40,7 @@ using Zygote
 
     # issue #69
     @testset "Zygote context" begin
-        ad = AD.ZygoteBackend()
+        ad = AD.ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig())
 
         # example in #69: context is not mutated
         @test ad.ruleconfig.context.cache === nothing
@@ -56,6 +59,13 @@ using Zygote
         end
         @test AD.jacobian(ad, f, [1, 2, 3], 3) ==
             ([6.0 0.0 0.0; 0.0 6.0 0.0; 0.0 0.0 6.0], [2.0, 4.0, 6.0])
+
+        # With `AD.ZygoteBackend`:
+        ad = AD.ZygoteBackend()
+        @test AD.derivative(ad, exp, 1.0) === (exp(1.0),)
+        @test AD.derivative(ad, exp, 1.0) === (exp(1.0),)
+        @test AD.jacobian(ad, f, [1, 2, 3], 3) ==
+            ([6.0 0.0 0.0; 0.0 6.0 0.0; 0.0 0.0 6.0], [2.0, 4.0, 6.0])
     end
 
     # issue #57
@@ -68,5 +78,17 @@ using Zygote
 
         @test_logs Zygote.gradient(myfunc, 1) # nothing is logged
         @test_logs AD.derivative(AD.ZygoteBackend(), myfunc, 1) # nothing is logged
+        @test_logs AD.derivative(
+            AD.ReverseRuleConfigBackend(Zygote.ZygoteRuleConfig()), myfunc, 1
+        ) # nothing is logged
+    end
+
+    # issue #54
+    @testset "allocations of jacobian" begin
+        f(x) = x .^ 2
+        x = rand(100)
+        ad = AD.ZygoteBackend()
+        @test AD.jacobian(ad, f, x) == Zygote.jacobian(f, x)
+        @test @allocated(AD.jacobian(ad, f, x)) == @allocated(Zygote.jacobian(f, x))
     end
 end
