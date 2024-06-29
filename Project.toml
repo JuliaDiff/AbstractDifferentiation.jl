@@ -21,7 +21,7 @@ ReverseDiff = "1"
 Tracker = "0.2"
 Zygote = "0.6"
 julia = "1.6"
-Enzyme = "0.11"
+Enzyme = "0.12"
 
 [extensions]
 AbstractDifferentiationChainRulesCoreExt = "ChainRulesCore"
