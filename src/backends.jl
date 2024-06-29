@@ -82,3 +82,23 @@ Note, however, that the behaviour of this backend is not equivalent to `ZygoteBa
     To be able to use this backend, you have to load Zygote.
 """
 struct ZygoteBackend <: AbstractReverseMode end
+
+"""
+    EnzymeReverseBackend
+
+AD backend that uses reverse mode of Enzyme.jl.
+
+!!! note
+    To be able to use this backend, you have to load Enzyme.
+"""
+struct EnzymeReverseBackend <: AbstractReverseMode end
+
+"""
+    EnzymeForwardBackend
+
+AD backend that uses forward mode of Enzyme.jl.
+
+!!! note
+    To be able to use this backend, you have to load Enzyme.
+"""
+struct EnzymeForwardBackend <: AbstractForwardMode end

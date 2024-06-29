@@ -11,4 +11,5 @@ using Test
     include("finitedifferences.jl")
     include("tracker.jl")
     include("ruleconfig.jl")
+    include("enzyme.jl")
 end
