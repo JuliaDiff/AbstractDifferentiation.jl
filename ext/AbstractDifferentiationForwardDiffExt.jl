@@ -61,6 +61,12 @@ function AD.hessian(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     return (ForwardDiff.hessian(f, x, cfg),)
 end
 
+function AD.value_and_derivative(::AD.ForwardDiffBackend, f, x::Real)
+    T = typeof(ForwardDiff.Tag(f, typeof(x)))
+    ydual = f(ForwardDiff.Dual{T}(x, one(x)))
+    return ForwardDiff.value(T, ydual), (ForwardDiff.partials(T, ydual, 1),)
+end
+
 function AD.value_and_gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     result = DiffResults.GradientResult(x)
     cfg = ForwardDiff.GradientConfig(f, x, chunk(ba, x))
@@ -68,11 +74,32 @@ function AD.value_and_gradient(ba::AD.ForwardDiffBackend, f, x::AbstractArray)
     return DiffResults.value(result), (DiffResults.derivative(result),)
 end
 
+function AD.value_and_second_derivative(ba::AD.ForwardDiffBackend, f, x::Real)
+    T = typeof(ForwardDiff.Tag(f, typeof(x)))
+    xdual = ForwardDiff.Dual{T}(x, one(x))
+    T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))
+    ydual = f(ForwardDiff.Dual{T2}(xdual, one(xdual)))
+    v = ForwardDiff.value(T, ForwardDiff.value(T2, ydual))
+    d2 = ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1)
+    return v, (d2,)
+end
+
 function AD.value_and_hessian(ba::AD.ForwardDiffBackend, f, x)
     result = DiffResults.HessianResult(x)
     cfg = ForwardDiff.HessianConfig(f, result, x, chunk(ba, x))
     ForwardDiff.hessian!(result, f, x, cfg)
     return DiffResults.value(result), (DiffResults.hessian(result),)
+end
+
+function AD.value_derivative_and_second_derivative(ba::AD.ForwardDiffBackend, f, x::Real)
+    T = typeof(ForwardDiff.Tag(f, typeof(x)))
+    xdual = ForwardDiff.Dual{T}(x, one(x))
+    T2 = typeof(ForwardDiff.Tag(f, typeof(xdual)))
+    ydual = f(ForwardDiff.Dual{T2}(xdual, one(xdual)))
+    v = ForwardDiff.value(T, ForwardDiff.value(T2, ydual))
+    d = ForwardDiff.partials(T, ForwardDiff.value(T2, ydual), 1)
+    d2 = ForwardDiff.partials(T, ForwardDiff.partials(T2, ydual, 1), 1)
+    return v, (d,), (d2,)
 end
 
 @inline step_toward(x::Number, v::Number, h) = x + h * v

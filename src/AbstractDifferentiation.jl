@@ -7,10 +7,23 @@ abstract type AbstractFiniteDifference <: AbstractBackend end
 abstract type AbstractForwardMode <: AbstractBackend end
 abstract type AbstractReverseMode <: AbstractBackend end
 
+"""
+    AD.HigherOrderBackend{B}
+
+Let `ab_f` be a forward-mode automatic differentiation backend and let `ab_r` be a reverse-mode automatic differentiation backend.
+To construct a higher order backend for doing forward-over-reverse-mode automatic differentiation, use `AD.HigherOrderBackend((ab_f, ab_r))`.
+To construct a higher order backend for doing reverse-over-forward-mode automatic differentiation, use `AD.HigherOrderBackend((ab_r, ab_f))`.
+
+# Fields
+
+- `backends::B`
+"""
 struct HigherOrderBackend{B} <: AbstractBackend
     backends::B
 end
+
 reduce_order(b::AbstractBackend) = b
+
 function reduce_order(b::HigherOrderBackend)
     if length(b.backends) == 1
         return lowest(b) # prevent zero tuple and subsequent error when reducing over HigherOrderBackend
@@ -18,8 +31,10 @@ function reduce_order(b::HigherOrderBackend)
         return HigherOrderBackend(reverse(Base.tail(reverse(b.backends))))
     end
 end
+
 lowest(b::AbstractBackend) = b
 lowest(b::HigherOrderBackend) = b.backends[end]
+
 second_lowest(b::AbstractBackend) = b
 second_lowest(b::HigherOrderBackend) = lowest(reduce_order(b))
 
@@ -30,6 +45,13 @@ primal_value(::AbstractBackend, ys, ::Any, ::Any) = primal_value(ys)
 primal_value(x::Tuple) = map(primal_value, x)
 primal_value(x) = x
 
+"""
+    AD.derivative(ab::AD.AbstractBackend, f, xs::Number...)
+
+Compute the derivatives of `f` with respect to the numbers `xs` using the backend `ab`.
+
+The function returns a `Tuple` of derivatives, one for each element in `xs`.
+"""
 function derivative(ab::AbstractBackend, f, xs::Number...)
     der = getindex.(jacobian(lowest(ab), f, xs...), 1)
     if der isa Tuple
@@ -39,14 +61,55 @@ function derivative(ab::AbstractBackend, f, xs::Number...)
     end
 end
 
+"""
+    AD.gradient(ab::AD.AbstractBackend, f, xs...)
+
+Compute the gradients of `f` with respect to the inputs `xs` using the backend `ab`.
+
+The function returns a `Tuple` of gradients, one for each element in `xs`.
+"""
 function gradient(ab::AbstractBackend, f, xs...)
     return reshape.(adjoint.(jacobian(lowest(ab), f, xs...)), size.(xs))
 end
+
+"""
+    AD.jacobian(ab::AD.AbstractBackend, f, xs...)
+
+Compute the Jacobians of `f` with respect to the inputs `xs` using the backend `ab`.
+
+The function returns a `Tuple` of Jacobians, one for each element in `xs`.
+"""
 function jacobian(ab::AbstractBackend, f, xs...) end
+
 function jacobian(ab::HigherOrderBackend, f, xs...)
     return jacobian(lowest(ab), f, xs...)
 end
 
+"""
+    AD.second_derivative(ab::AD.AbstractBackend, f, x)
+
+Compute the second derivative of `f` with respect to the input `x` using the backend `ab`.
+
+The function returns a single value because `second_derivative` currently only supports a single input.
+"""
+function second_derivative(ab::AbstractBackend, f, x)
+    if x isa Tuple
+        # only support computation of second derivative for functions with single input argument
+        x = only(x)
+    end
+    return derivative(second_lowest(ab), x -> begin
+        d = derivative(lowest(ab), f, x)
+        return d[1] # derivative returns a tuple
+    end, x)
+end
+
+"""
+    AD.hessian(ab::AD.AbstractBackend, f, x)
+
+Compute the Hessian of `f` wrt the input `x` using the backend `ab`.
+
+The function returns a single matrix because `hessian` currently only supports a single input.
+"""
 function hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
@@ -57,19 +120,61 @@ function hessian(ab::AbstractBackend, f, x)
     end, x)
 end
 
+"""
+    AD.value_and_derivative(ab::AD.AbstractBackend, f, xs::Number...)
+
+Return the tuple `(v, ds)` of the function value `v = f(xs...)` and the derivatives `ds = AD.derivative(ab, f, xs...)`.
+
+See also [`AbstractDifferentiation.derivative`](@ref).
+"""
 function value_and_derivative(ab::AbstractBackend, f, xs::Number...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
     return value[1], getindex.(jacs, 1)
 end
+
+"""
+    AD.value_and_gradient(ab::AD.AbstractBackend, f, xs...)
+
+Return the tuple `(v, gs)` of the function value `v = f(xs...)` and the gradients `gs = AD.gradient(ab, f, xs...)`.
+    
+See also [`AbstractDifferentiation.gradient`](@ref).
+"""
 function value_and_gradient(ab::AbstractBackend, f, xs...)
     value, jacs = value_and_jacobian(lowest(ab), f, xs...)
     return value, reshape.(adjoint.(jacs), size.(xs))
 end
+
+"""
+    AD.value_and_jacobian(ab::AD.AbstractBackend, f, xs...)
+
+Return the tuple `(v, Js)` of the function value `v = f(xs...)` and the Jacobians `Js = AD.jacobian(ab, f, xs...)`.
+    
+See also [`AbstractDifferentiation.jacobian`](@ref).
+"""
 function value_and_jacobian(ab::AbstractBackend, f, xs...)
     value = f(xs...)
     jacs = jacobian(lowest(ab), f, xs...)
     return value, jacs
 end
+
+"""
+    AD.value_and_second_derivative(ab::AD.AbstractBackend, f, x)
+
+Return the tuple `(v, d2)` of the function value `v = f(x)` and the second derivative `d2 = AD.second_derivative(ab, f, x)`.
+
+See also [`AbstractDifferentiation.second_derivative`](@ref)
+"""
+function value_and_second_derivative(ab::AbstractBackend, f, x)
+    return f(x), second_derivative(ab, f, x)
+end
+
+"""
+    AD.value_and_hessian(ab::AD.AbstractBackend, f, x)
+
+Return the tuple `(v, H)` of the function value `v = f(x)` and the Hessian `H = AD.hessian(ab, f, x)`.
+
+See also [`AbstractDifferentiation.hessian`](@ref). 
+"""
 function value_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
@@ -84,20 +189,36 @@ function value_and_hessian(ab::AbstractBackend, f, x)
 
     return value, hess
 end
-function value_and_hessian(ab::HigherOrderBackend, f, x)
+
+"""
+    AD.value_derivative_and_second_derivative(ab::AD.AbstractBackend, f, x)
+
+Return the tuple `(v, d, d2)` of the function value `v = f(x)`, the first derivative `d = AD.derivative(ab, f, x)`, and the second derivative `d2 = AD.second_derivative(ab, f, x)`.
+"""
+function value_derivative_and_second_derivative(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
         x = only(x)
     end
 
     value = f(x)
-    hess = jacobian(second_lowest(ab), (_x,) -> begin
-        g = gradient(lowest(ab), f, _x)
-        return g[1]  # gradient returns a tuple
-    end, x)
+    deriv, secondderiv = value_and_derivative(
+        second_lowest(ab), _x -> begin
+            d = derivative(lowest(ab), f, _x)
+            return d[1] # derivative returns a tuple
+        end, x
+    )
 
-    return value, hess
+    return value, (deriv,), secondderiv
 end
+
+"""
+    AD.value_gradient_and_hessian(ab::AD.AbstractBackend, f, x)
+    
+Return the tuple `(v, g, H)` of the function value `v = f(x)`, the gradient `g = AD.gradient(ab, f, x)`, and the Hessian `H = AD.hessian(ab, f, x)`.
+
+See also [`AbstractDifferentiation.gradient`](@ref) and [`AbstractDifferentiation.hessian`](@ref).
+"""
 function value_gradient_and_hessian(ab::AbstractBackend, f, x)
     if x isa Tuple
         # only support computation of Hessian for functions with single input argument
@@ -114,54 +235,58 @@ function value_gradient_and_hessian(ab::AbstractBackend, f, x)
 
     return value, (grads,), hess
 end
-function value_gradient_and_hessian(ab::HigherOrderBackend, f, x)
-    if x isa Tuple
-        # only support computation of Hessian for functions with single input argument
-        x = only(x)
-    end
 
-    value = f(x)
-    grads, hess = value_and_jacobian(
-        second_lowest(ab), _x -> begin
-            g = gradient(lowest(ab), f, _x)
-            return g[1] # gradient returns a tuple
-        end, x
-    )
-
-    return value, (grads,), hess
-end
-
+"""
+    AD.pushforward_function(ab::AD.AbstractBackend, f, xs...)
+    
+Return the pushforward function `pff` of the function `f` at the inputs `xs` using backend `ab`. 
+    
+The pushfoward function `pff` accepts as input a `Tuple` of tangents, one for each element in `xs`.
+If `xs` consists of a single element, `pff` can also accept a single tangent instead of a 1-tuple.
+"""
 function pushforward_function(ab::AbstractBackend, f, xs...)
-    return (ds) -> begin
-        return jacobian(
-            lowest(ab),
-            (xds...,) -> begin
-                if ds isa Tuple
-                    @assert length(xs) == length(ds)
-                    newxs = xs .+ ds .* xds
-                    return f(newxs...)
-                else
-                    newx = only(xs) + ds * only(xds)
-                    return f(newx)
-                end
-            end,
-            _zero.(xs, ds)...,
-        )
+    function pff(ds)
+        function pff_aux(xds...)
+            if ds isa Tuple
+                @assert length(xs) == length(ds)
+                newxs = xs .+ ds .* xds
+                return f(newxs...)
+            else
+                newx = only(xs) + ds * only(xds)
+                return f(newx)
+            end
+        end
+        return jacobian(lowest(ab), pff_aux, _zero.(xs, ds)...)
     end
+    return pff
 end
+
+"""
+    AD.value_and_pushforward_function(ab::AD.AbstractBackend, f, xs...)
+    
+Return a single function `vpff` which, given tangents `ts`, computes the tuple `(v, p) = vpff(ts)` composed of
+    
+- the function value `v = f(xs...)`
+- the pushforward value `p = pff(ts)` given by the pushforward function `pff = AD.pushforward_function(ab, f, xs...)` applied to `ts`.
+
+See also [`AbstractDifferentiation.pushforward_function`](@ref).
+
+!!! warning
+    This name should be understood as "(value and pushforward) function", and thus is not aligned with the reverse mode counterpart [`AbstractDifferentiation.value_and_pullback_function`](@ref).
+"""
 function value_and_pushforward_function(ab::AbstractBackend, f, xs...)
     n = length(xs)
     value = f(xs...)
-    pf_function = pushforward_function(lowest(ab), f, xs...)
+    pff = pushforward_function(lowest(ab), f, xs...)
 
-    return ds -> begin
+    function vpff(ds)
         if !(ds isa Tuple)
             ds = (ds,)
         end
         @assert length(ds) == n
-        pf = pf_function(ds)
-        return value, pf
+        return value, pff(ds)
     end
+    return vpff
 end
 
 _zero(::Number, d::Number) = zero(d)
@@ -180,14 +305,33 @@ end
     return dot(x, y)
 end
 
+"""
+    AD.pullback_function(ab::AD.AbstractBackend, f, xs...)
+
+Return the pullback function `pbf` of the function `f` at the inputs `xs` using backend `ab`. 
+    
+The pullback function `pbf` accepts as input a `Tuple` of cotangents, one for each output of `f`.
+If `f` has a single output, `pbf` can also accept a single input instead of a 1-tuple.
+"""
 function pullback_function(ab::AbstractBackend, f, xs...)
     _, pbf = value_and_pullback_function(ab, f, xs...)
     return pbf
 end
+
+"""
+    AD.value_and_pullback_function(ab::AD.AbstractBackend, f, xs...)
+
+Return a tuple `(v, pbf)` of the function value `v = f(xs...)` and the pullback function `pbf = AD.pullback_function(ab, f, xs...)`.
+
+See also [`AbstractDifferentiation.pullback_function`](@ref).
+
+!!! warning
+    This name should be understood as "value and (pullback function)", and thus is not aligned with the forward mode counterpart [`AbstractDifferentiation.value_and_pushforward_function`](@ref).
+"""
 function value_and_pullback_function(ab::AbstractBackend, f, xs...)
     value = f(xs...)
-    function pullback_function(ws)
-        function pullback_gradient_function(_xs...)
+    function pbf(ws)
+        function pbf_aux(_xs...)
             vs = f(_xs...)
             if ws isa Tuple
                 @assert length(vs) == length(ws)
@@ -198,9 +342,9 @@ function value_and_pullback_function(ab::AbstractBackend, f, xs...)
                 return _dot(vs, ws)
             end
         end
-        return gradient(lowest(ab), pullback_gradient_function, xs...)
+        return gradient(lowest(ab), pbf_aux, xs...)
     end
-    return value, pullback_function
+    return value, pbf
 end
 
 struct LazyDerivative{B,F,X}
@@ -244,6 +388,7 @@ struct LazyGradient{B,F,X}
     f::F
     xs::X
 end
+
 Base.:*(d::LazyGradient, y) = gradient(d.backend, d.f, d.xs...) * y
 Base.:*(y, d::LazyGradient) = y * gradient(d.backend, d.f, d.xs...)
 
@@ -392,15 +537,49 @@ function Base.:*(ys::Number, d::LazyHessian)
     end
 end
 
+"""
+    AD.lazy_derivative(ab::AbstractBackend, f, xs::Number...)
+    
+Return an operator `ld` for multiplying by the derivative of `f` at `xs`.
+    
+You can apply the operator by multiplication e.g. `ld * y` where `y` is a number if `f` has a single input, a tuple of the same length as `xs` if `f` has multiple inputs, or an array of numbers/tuples.
+"""
 function lazy_derivative(ab::AbstractBackend, f, xs::Number...)
     return LazyDerivative(ab, f, xs)
 end
+
+"""
+    AD.lazy_gradient(ab::AbstractBackend, f, xs...)
+    
+Return an operator `lg` for multiplying by the gradient of `f` at `xs`.
+    
+You can apply the operator by multiplication e.g. `lg * y` where `y` is a number if `f` has a single input or a tuple of the same length as `xs` if `f` has multiple inputs.
+"""
 function lazy_gradient(ab::AbstractBackend, f, xs...)
     return LazyGradient(ab, f, xs)
 end
+
+"""
+    AD.lazy_hessian(ab::AbstractBackend, f, x)
+    
+Return an operator `lh` for multiplying by the Hessian of the scalar-valued function `f` at `x`.
+    
+You can apply the operator by multiplication e.g. `lh * y` or `y' * lh` where `y` is a number or a vector of the appropriate length.
+"""
 function lazy_hessian(ab::AbstractBackend, f, xs...)
     return LazyHessian(ab, f, xs)
 end
+
+"""
+    AD.lazy_jacobian(ab::AbstractBackend, f, xs...)
+    
+Return an operator `lj` for multiplying by the Jacobian of `f` at `xs`.
+    
+You can apply the operator by multiplication e.g. `lj * y` or `y' * lj` where `y` is a number, vector or tuple of numbers and/or vectors. 
+If `f` has multiple inputs, `y` in `lj * y` should be a tuple.
+If `f` has multiple outputs, `y` in `y' * lj` should be a tuple.
+Otherwise, it should be a scalar or a vector of the appropriate length.
+"""
 function lazy_jacobian(ab::AbstractBackend, f, xs...)
     return LazyJacobian(ab, f, xs)
 end
@@ -409,8 +588,10 @@ struct D{B,F}
     backend::B
     f::F
 end
+
 D(b::AbstractBackend, d::D) = H(HigherOrderBackend((b, d.b)), d.f)
 D(d::D) = H(HigherOrderBackend((d.backend, d.backend)), d.f)
+
 function (d::D)(xs...; lazy=true)
     if lazy
         return lazy_jacobian(d.ab, d.f, xs...)
@@ -423,6 +604,7 @@ struct H{B,F}
     backend::B
     f::F
 end
+
 function (h::H)(xs...; lazy=true)
     if lazy
         return lazy_hessian(h.ab, h.f, xs...)
@@ -514,13 +696,17 @@ _eachcol(a) = eachcol(a)
 function identity_matrix_like(x)
     throw("The function `identity_matrix_like` is not defined for the type $(typeof(x)).")
 end
+
 function identity_matrix_like(x::AbstractVector)
     return (Matrix{eltype(x)}(I, length(x), length(x)),)
 end
+
 function identity_matrix_like(x::Number)
     return (one(x),)
 end
+
 identity_matrix_like(x::Tuple) = identity_matrix_like(x...)
+
 @generated function identity_matrix_like(x...)
     expr = :(())
     for i in 1:length(x)
@@ -540,6 +726,7 @@ zero_matrix_like(x::Tuple) = zero_matrix_like(x...)
 zero_matrix_like(x...) = map(zero_matrix_like, x)
 zero_matrix_like(x::AbstractVector) = (zero(similar(x, length(x), length(x))),)
 zero_matrix_like(x::Number) = (zero(x),)
+
 function zero_matrix_like(x)
     throw("The function `zero_matrix_like` is not defined for the type $(typeof(x)).")
 end
@@ -551,10 +738,12 @@ include("backends.jl")
 
 # TODO: Replace with proper version
 const EXTENSIONS_SUPPORTED = isdefined(Base, :get_extension)
+
 if !EXTENSIONS_SUPPORTED
     using Requires: @require
     include("../ext/AbstractDifferentiationChainRulesCoreExt.jl")
 end
+
 @static if !EXTENSIONS_SUPPORTED
     function __init__()
         @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin

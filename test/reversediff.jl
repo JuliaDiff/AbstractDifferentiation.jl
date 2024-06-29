@@ -14,6 +14,9 @@ using ReverseDiff
         @testset "Jacobian" begin
             test_jacobians(backend)
         end
+        @testset "Second derivative" begin
+            test_second_derivatives(backend)
+        end
         @testset "Hessian" begin
             test_hessians(backend)
         end
